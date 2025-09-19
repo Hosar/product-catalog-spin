@@ -19,6 +19,7 @@ import type { Product, Review } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
 import { Category } from '@/types/category';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { CHART_COLORS } from '@/utils/constants';
 
 interface ProductsPresenterProps {
   products: Product[];
@@ -38,20 +39,8 @@ const chartBodyTemplate = (rowData: Product) => {
     datasets: [
       {
         data: reviews || [],
-        backgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56',
-          '#4BC0C0',
-          "#0033cc"
-        ],
-        hoverBackgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56',
-          '#4BC0C0',
-          "#0033cc"
-        ]
+        backgroundColor: CHART_COLORS,
+        hoverBackgroundColor: CHART_COLORS
       }
     ]
   }

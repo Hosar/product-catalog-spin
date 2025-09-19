@@ -1,7 +1,6 @@
 'use client'
 import React from "react";
 import { PrimeReactProvider } from 'primereact/api';
-import { ProductsProvider } from './ProductsProvider';
 
 export function Providers({
   children,
@@ -10,9 +9,7 @@ export function Providers({
 }) {
   return (
     <PrimeReactProvider>
-      <ProductsProvider>
         {children}
-      </ProductsProvider>
     </PrimeReactProvider>
   );
 }
