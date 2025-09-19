@@ -1,12 +1,10 @@
 /**
- * ProductsContainer component - Container component that handles data fetching and business logic
- * This component uses Server Actions to fetch data and passes it to the presenter component
- * Initial render uses server-fetched data, client-side fetching only for refetch operations
+ * ProductsContainer component - Container component that handles initial data
+ * The presenter component now uses Next.js URL hooks for state management
  */
 
 import React from 'react';
 import { ProductsPresenter } from './ProductsPresenter';
-import { getProductsAndCategories } from './productsActions';
 import type { Product } from '@/types/product';
 import { Category } from '@/types/category';
 
@@ -20,16 +18,9 @@ interface ProductsContainerProps {
   className?: string;
 }
 
-interface ProductsData {
-  products: Product[];
-  categories: string[];
-  loading: boolean;
-  error: string | null;
-}
-
 /**
- * Container component that manages data fetching and business logic
- * Uses Server Actions to fetch data and passes it to the presenter
+ * Container component that manages initial data and passes it to the presenter
+ * The presenter component now uses Next.js URL hooks for state management
  */
 export const ProductsContainer: React.FC<ProductsContainerProps> = ({ 
   initialProducts = [],
@@ -40,7 +31,6 @@ export const ProductsContainer: React.FC<ProductsContainerProps> = ({
   initialError = null,
   className = '' 
 }) => {
-
   return (
     <ProductsPresenter
       products={initialProducts}
@@ -48,7 +38,6 @@ export const ProductsContainer: React.FC<ProductsContainerProps> = ({
       total={initialTotal}
       skip={initialSkip}
       limit={initialLimit}
-      loading={false}
       error={initialError}
       className={className}
     />

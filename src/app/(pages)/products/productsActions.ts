@@ -13,9 +13,18 @@ const baseUrl = process.env.DOMAIN || "http://localhost:3000";
 
 /**
  * Fetches all products from the external API
+ * @param params - URL parameters for filtering, sorting, and pagination
  * @returns Promise with products array or error
  */
-export async function getProducts(): Promise<{
+export async function getProducts(params: {
+  skip?: number;
+  limit?: number;
+  category?: string;
+  sort?: string;
+  sortField?: string;
+  sortOrder?: string;
+  searchQuery?: string;
+} = {}): Promise<{
   success: boolean;
   data?: Product[];
   total?: number;
@@ -23,19 +32,91 @@ export async function getProducts(): Promise<{
   limit?: number;
   error?: string;
 }> {
+  const {
+    skip = 0,
+    limit = 10,
+    category = '',
+    sort = 'title-asc',
+    sortField = '',
+    sortOrder = '1',
+    searchQuery = ''
+  } = params;
   
   try {
-    logger.info('Server Action: Fetching products from DummyJSON API');
-    const productsUrl = `${baseUrl}/api/products?pagesize=5&skip=0`;
+    logger.info({ skip, limit, category, sort, searchQuery }, 'Server Action: Fetching products from DummyJSON API');
+    
+    // If there's a search query, use the search API
+    if (searchQuery) {
+      const searchParams = new URLSearchParams({
+        q: searchQuery,
+        skip: skip.toString(),
+        limit: limit.toString(),
+      });
+      
+      // Include category in search if it's provided
+      if (category) {
+        searchParams.set('category', category);
+      }
+      
+      const searchUrl = `${baseUrl}/api/products/search?${searchParams.toString()}`;
+      console.log('searchUrl ...:', searchUrl);
+      
+      const response = await fetch(searchUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'ProductCatalog/1.0',
+        },
+        signal: AbortSignal.timeout(10000),
+        cache: 'force-cache',
+        next: { revalidate: 300 }
+      });
+      
+      if (!response.ok) {
+        const errorMessage = `HTTP error! status: ${response.status}`;
+        logger.error({ status: response.status, statusText: response.statusText }, errorMessage);
+        return { success: false, error: errorMessage };
+      }
+      
+      const data = await response.json();
+      const products: Product[] = data.products;
+      
+      if (!Array.isArray(products)) {
+        logger.error('Invalid response format from search API');
+        return { success: false, error: 'Invalid response format from search API' };
+      }
+      
+      logger.info({ productCount: products.length }, 'Products fetched successfully via search API');
+      return { success: true, data: products, total: data.total, skip: data.skip, limit: data.limit };
+    }
+    
+    // Build regular products API URL with parameters
+    const productsParams = new URLSearchParams({
+      pagesize: limit.toString(),
+      skip: skip.toString(),
+    });
+    
+    if (category) {
+      productsParams.set('category', category);
+    }
+    
+    if (sort !== 'title-asc') {
+      const [sortFieldName, sortOrderName] = sort.split('-');
+      if (sortFieldName && sortOrderName) {
+        productsParams.set('sort', sortFieldName);
+        productsParams.set('order', sortOrderName);
+      }
+    }
+    
+    const productsUrl = `${baseUrl}/api/products?${productsParams.toString()}`;
     console.log('productsUrl ...:', productsUrl);
+    
     const response = await fetch(productsUrl, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'ProductCatalog/1.0',
       },
-      // Add timeout for external API calls
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-      cache: 'force-cache', // Cache for 5 minutes
+      signal: AbortSignal.timeout(10000),
+      cache: 'force-cache',
       next: { revalidate: 300 }
     });
     
@@ -48,7 +129,6 @@ export async function getProducts(): Promise<{
     const data = await response.json();
     const products: Product[] = data.products;
     
-    // Validate response structure
     if (!Array.isArray(products)) {
       logger.error('Invalid response format from external API');
       return { success: false, error: 'Invalid response format from external API' };
@@ -62,6 +142,57 @@ export async function getProducts(): Promise<{
     logger.error({ error: errorMessage }, 'Error fetching products via Server Action');
     
     return { success: false, error: 'Error al cargar los productos' };
+  }
+}
+
+/**
+ * Fetches products by category from the external API
+ * @param category - The category slug to fetch products for
+ * @returns Promise with products array or error
+ */
+export async function fetchProductsByCategory(category: string): Promise<{
+  success: boolean;
+  data?: Product[];
+  error?: string;
+}> {
+  try {
+    logger.info({ category }, 'Server Action: Fetching products by category from DummyJSON API');
+    
+    const categoryUrl = `${baseUrl}/api/products/category/${encodeURIComponent(category)}`;
+    console.log('categoryUrl ...:', categoryUrl);
+    
+    const response = await fetch(categoryUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'ProductCatalog/1.0',
+      },
+      signal: AbortSignal.timeout(10000),
+      cache: 'force-cache',
+      next: { revalidate: 300 }
+    });
+    
+    if (!response.ok) {
+      const errorMessage = `HTTP error! status: ${response.status}`;
+      logger.error({ status: response.status, statusText: response.statusText }, errorMessage);
+      return { success: false, error: errorMessage };
+    }
+    
+    const products: Product[] = await response.json();
+    
+    // Validate response structure
+    if (!Array.isArray(products)) {
+      logger.error('Invalid response format from category API');
+      return { success: false, error: 'Invalid response format from category API' };
+    }
+    
+    logger.info({ productCount: products.length, category }, 'Products fetched successfully by category via Server Action');
+    
+    return { success: true, data: products };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    logger.error({ error: errorMessage, category }, 'Error fetching products by category via Server Action');
+    
+    return { success: false, error: 'Error al cargar los productos de la categoría' };
   }
 }
 
@@ -115,55 +246,94 @@ export async function getCategories(): Promise<{
 }
 
 /**
- * Fetches both products and categories in parallel
- * @returns Promise with both products and categories data
+ * Fetches products by category using the category-specific endpoint
+ * @param params - URL parameters for filtering, sorting, and pagination
+ * @returns Promise with products data
  */
-export async function getProductsAndCategories(): Promise<{
+export async function getProductsByCategory(params: {
+  skip?: number;
+  limit?: number;
+  category: string;
+  sort?: string;
+  sortField?: string;
+  sortOrder?: string;
+}): Promise<{
   success: boolean;
   products?: Product[];
   total?: number;
   skip?: number;
   limit?: number;
-  categories?: Category[];
   error?: string;
 }> {
   try {
-    logger.info('Server Action: Fetching products and categories in parallel');
+    logger.info(params, 'Server Action: Fetching products by category');
     
-    const [productsResult, categoriesResult] = await Promise.all([
-      getProducts(),
-      getCategories(),
-    ]);
+    const categoryProductsResult = await fetchProductsByCategory(params.category);
 
-    // Check if both requests were successful
-    if (!productsResult.success) {
-      return { success: false, error: productsResult.error || 'Failed to fetch products' };
+    // Check if request was successful
+    if (!categoryProductsResult.success) {
+      return { success: false, error: categoryProductsResult.error || 'Failed to fetch products by category' };
     }
 
-    if (!categoriesResult.success) {
-      return { success: false, error: categoriesResult.error || 'Failed to fetch categories' };
+    logger.info('Products by category fetched successfully via Server Action');
+
+    // For category endpoint, we get all products for that category
+    // Handle pagination and sorting on the server side
+    const allProducts = categoryProductsResult.data || [];
+    
+    // Apply sorting if specified
+    let sortedProducts = [...allProducts];
+    if (params.sort && params.sort !== 'title-asc') {
+      const [sortField, sortOrder] = params.sort.split('-');
+      sortedProducts = sortedProducts.sort((a, b) => {
+        let aValue: string | number;
+        let bValue: string | number;
+
+        switch (sortField) {
+          case 'price':
+            aValue = a.price;
+            bValue = b.price;
+            break;
+          case 'rating':
+            aValue = a.rating;
+            bValue = b.rating;
+            break;
+          case 'title':
+            aValue = a.title.toLowerCase();
+            bValue = b.title.toLowerCase();
+            break;
+          default:
+            return 0;
+        }
+
+        if (sortOrder === 'asc') {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        } else {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        }
+      });
     }
-
-    logger.info('Products and categories fetched successfully via Server Action');
-
-    console.log('productsResult.data', productsResult.data);
-    console.log('categoriesResult.data', categoriesResult.data);
-
+    
+    // Apply pagination
+    const startIndex = params.skip || 0;
+    const endIndex = startIndex + (params.limit || 10);
+    const paginatedProducts = sortedProducts.slice(startIndex, endIndex);
+    
     return {
       success: true,
-      products: productsResult.data,
-      total: productsResult.total,
-      skip: productsResult.skip,
-      limit: productsResult.limit,
-      categories: categoriesResult.data,
+      products: paginatedProducts,
+      total: allProducts.length,
+      skip: startIndex,
+      limit: params.limit || 10,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    logger.error({ error: errorMessage }, 'Error fetching products and categories via Server Action');
+    logger.error({ error: errorMessage }, 'Error fetching products by category via Server Action');
     
-    return { success: false, error: 'Error al cargar los datos de productos' };
+    return { success: false, error: 'Error al cargar los datos de productos de la categoría' };
   }
 }
+
 
 /**
  * Revalidates the products cache
