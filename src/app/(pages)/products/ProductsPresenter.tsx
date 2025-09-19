@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Skeleton } from 'primereact/skeleton';
 import { Message } from 'primereact/message';
 import { DataTable } from 'primereact/datatable';
@@ -7,8 +7,6 @@ import { Column } from 'primereact/column';
 import { Paginator } from 'primereact/paginator';
 import { Image } from 'primereact/image';
 import { Tag } from 'primereact/tag';
-import { useProductFilters } from '@/hooks/useProductFilters';
-import { usePagination } from '@/hooks/usePagination';
 import { ProductFilters } from './components/ProductFilters';
 import { Chart } from 'primereact/chart';
 // import { ProductChart } from './components/ProductChart';
@@ -16,6 +14,8 @@ import { formatPrice, capitalize, truncateText } from '@/utils/formatters';
 import type { Product } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
 import { Category } from '@/types/category';
+import { useProductsStore } from '@/lib/stores/productsStore';
+import { useUrlSync } from '@/hooks/useUrlSync';
 
 interface ProductsPresenterProps {
   products: Product[];
@@ -60,19 +60,54 @@ const chartBodyTemplate = (rowData: any) => {
  * All data and business logic comes from the container component
  */
 export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
-  products,
-  total,
-  skip,
-  limit,
-  categories,
-  loading,
-  error,
+  products: initialProducts,
+  total: initialTotal,
+  skip: initialSkip,
+  limit: initialLimit,
+  categories: initialCategories,
+  loading: initialLoading,
+  error: initialError,
   className = ''
 }) => {
+  // Zustand store
+  const {
+    products,
+    categories,
+    total,
+    skip,
+    limit,
+    loading,
+    error,
+    selectedCategory,
+    sortBy,
+    isInitialized,
+    setSkip,
+    setLimit,
+    setSelectedCategory,
+    setSortBy,
+    resetPagination,
+    initializeWithData,
+  } = useProductsStore();
+
+  // URL synchronization
+  useUrlSync();
 
   // DataTable sorting state
   const [sortField, setSortField] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<0 | 1 | -1 | null | undefined>(1);
+
+  // Initialize store with initial data (only once)
+  useEffect(() => {
+    if (!isInitialized && initialProducts.length > 0 && initialCategories.length > 0) {
+      initializeWithData({
+        products: initialProducts,
+        categories: initialCategories,
+        total: initialTotal,
+        skip: initialSkip,
+        limit: initialLimit,
+      });
+    }
+  }, [isInitialized, initialProducts, initialCategories, initialTotal, initialSkip, initialLimit, initializeWithData]);
 
   console.log('products ....:', products);
   console.log('total ....:', total);
@@ -80,42 +115,47 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   console.log('limit ....:', limit);
   console.log('categories ....:', categories);
 
-  // Handle filtering and sorting
-  const {
-    selectedCategory,
-    sortBy,
-    filteredAndSortedProducts,
-    categoryOptions,
-    sortOptions,
-    handleCategoryChange,
-    handleSortChange,
-  } = useProductFilters({ products, categories });
+  // Create category options for dropdown
+  const categoryOptions = [
+    { label: 'Todas las categorías', value: '' },
+    ...categories.map((category: Category) => ({
+      label: capitalize(category.name),
+      value: category.name
+    }))
+  ];
 
-  
+  // Sort options
+  const sortOptions = [
+    { label: 'Nombre (A-Z)', value: 'title-asc' },
+    { label: 'Nombre (Z-A)', value: 'title-desc' },
+    { label: 'Precio (Menor a Mayor)', value: 'price-asc' },
+    { label: 'Precio (Mayor a Menor)', value: 'price-desc' },
+    { label: 'Calificación (Mayor a Menor)', value: 'rating-desc' },
+    { label: 'Calificación (Menor a Mayor)', value: 'rating-asc' },
+  ];
+
   // Handle pagination
-  const {
-    first,
-    rows,
-    paginatedItems: paginatedProducts,
-    onPageChange,
-    resetPagination,
-  } = usePagination({ items: filteredAndSortedProducts });
+  const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
+    setSkip(event.first);
+    setLimit(event.rows);
+  }, [setSkip, setLimit]);
 
   // Handle filter changes with pagination reset
   const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
-    handleCategoryChange(e);
+    setSelectedCategory(e.value);
     resetPagination();
-  }, [handleCategoryChange, resetPagination]);
+  }, [setSelectedCategory, resetPagination]);
 
   const handleSortChangeWithReset = useCallback((e: { value: string }) => {
-    handleSortChange(e);
+    setSortBy(e.value);
     resetPagination();
-  }, [handleSortChange, resetPagination]);
+  }, [setSortBy, resetPagination]);
 
   // Handle DataTable sorting
   const onSort = useCallback((event: DataTableStateEvent) => {
     setSortField(event.sortField || '');
     setSortOrder(event.sortOrder);
+    // Reset to first page when sorting
     resetPagination();
   }, [resetPagination]);
 
@@ -177,7 +217,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   };
 
   const brandBodyTemplate = (product: Product) => {
-    return <span className="font-medium">{product.brand}</span>;
+    return <span className="font-medium">{product.sku}</span>;
   };
 
   // Handle product selection (for future functionality)
@@ -275,9 +315,9 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
         <section className="flex align-items-center justify-content-between" aria-label="Información de resultados">
           <p 
             className="text-600 m-0" 
-            aria-label={`Mostrando ${paginatedProducts.length} de ${filteredAndSortedProducts.length} productos`}
+            aria-label={`Mostrando ${products.length} de ${total} productos`}
           >
-            Mostrando {paginatedProducts.length} de {filteredAndSortedProducts.length} productos
+            Mostrando {products.length} de {total} productos
           </p>
         </section>
 
@@ -293,8 +333,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             dataKey="id"
             emptyMessage="No se encontraron productos"
             className="p-datatable-sm"
-            rows={10} 
-            rowsPerPageOptions={[5, 10, 25, 50]} 
+            paginator={false}
             aria-label="Tabla de productos"
           >
             <Column
@@ -326,13 +365,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               style={{ width: '120px' }}
             />
             <Column
-              field="brand"
-              header="Marca"
-              body={brandBodyTemplate}
-              sortable
-              style={{ width: '120px' }}
-            />
-            <Column
               field="rating"
               header="Calificación"
               body={ratingBodyTemplate}
@@ -353,18 +385,16 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           </DataTable>
 
           {/* Pagination */}
-          {rows && (
-            <nav className="flex justify-content-center p-3" aria-label="Navegación de páginas">
-              <Paginator
-                first={skip}
-                rows={limit}
-                totalRecords={total}
-                onPageChange={onPageChange}
-                template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
-                aria-label="Navegación de páginas de productos"
-              />
-            </nav>
-          )}
+          <nav className="flex justify-content-center p-3" aria-label="Navegación de páginas">
+            <Paginator
+              first={skip}
+              rows={limit}
+              totalRecords={total}
+              onPageChange={onPageChange}
+              template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+              aria-label="Navegación de páginas de productos"
+            />
+          </nav>
         </section>
         </div>
       </div>

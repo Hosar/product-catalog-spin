@@ -26,7 +26,7 @@ export async function getProducts(): Promise<{
   
   try {
     logger.info('Server Action: Fetching products from DummyJSON API');
-    const productsUrl = `${baseUrl}/api/products?pagesize=5&skip=0`;
+    const productsUrl = `${baseUrl}/api/products?pagesize=10&skip=0`;
     console.log('productsUrl ...:', productsUrl);
     const response = await fetch(productsUrl, {
       headers: {

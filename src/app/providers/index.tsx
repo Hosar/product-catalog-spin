@@ -1,6 +1,7 @@
 'use client'
 import React from "react";
 import { PrimeReactProvider } from 'primereact/api';
+import { ProductsProvider } from './ProductsProvider';
 
 export function Providers({
   children,
@@ -8,6 +9,10 @@ export function Providers({
   readonly children: React.ReactNode;
 }) {
   return (
-    <PrimeReactProvider>{children}</PrimeReactProvider>
+    <PrimeReactProvider>
+      <ProductsProvider>
+        {children}
+      </ProductsProvider>
+    </PrimeReactProvider>
   );
 }

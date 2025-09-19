@@ -20,7 +20,7 @@ interface ProductsServerContainerProps {
  */
 export async function ProductsServerContainer({ 
   className = '' 
-}: ProductsServerContainerProps): Promise<React.ReactElement> {
+}: ProductsServerContainerProps) {
   // Fetch initial data on the server using the combined action
   const { success, categories, products, error, total, skip, limit } = await getProductsAndCategories();
 

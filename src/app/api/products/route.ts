@@ -19,18 +19,32 @@ const logger = pino({
  * GET endpoint to fetch products from DummyJSON API
  * @returns JSON response with products array or error message
  */
-export async function GET(request: NextRequest): Promise<NextResponse<Product[] | { error: string }>> {
+export async function GET(request: NextRequest): Promise<NextResponse<DummyJsonResponse | { error: string }>> {
   const { searchParams } = new URL(request.url);
   const pageSize = searchParams.get('pagesize');
   const skip = searchParams.get('skip');
+  const category = searchParams.get('category');
+  const sort = searchParams.get('sort');
+  const order = searchParams.get('order');
 
   console.log('pageSize ...:', pageSize);
   console.log('skip ...:', skip);
+  console.log('category ...:', category);
+  console.log('sort ...:', sort);
+  console.log('order ...:', order);
 
   try {
     logger.info('Fetching products from DummyJSON API');
 
-    const url = pageSize && skip ? `https://dummyjson.com/products?limit=${pageSize}&skip=${skip}` : 'https://dummyjson.com/products';
+    // Build DummyJSON API URL with parameters
+    const dummyJsonParams = new URLSearchParams();
+    if (pageSize) dummyJsonParams.set('limit', pageSize);
+    if (skip) dummyJsonParams.set('skip', skip);
+    if (category) dummyJsonParams.set('category', category);
+    if (sort) dummyJsonParams.set('sort', sort);
+    if (order) dummyJsonParams.set('order', order);
+
+    const url = `https://dummyjson.com/products?${dummyJsonParams.toString()}`;
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
