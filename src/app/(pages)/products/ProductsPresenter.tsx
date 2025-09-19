@@ -19,6 +19,9 @@ import { Category } from '@/types/category';
 
 interface ProductsPresenterProps {
   products: Product[];
+  total: number;
+  skip: number;
+  limit: number;
   categories: Category[];
   loading: boolean;
   error: string | null;
@@ -58,16 +61,23 @@ const chartBodyTemplate = (rowData: any) => {
  */
 export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   products,
+  total,
+  skip,
+  limit,
   categories,
   loading,
   error,
   className = ''
 }) => {
+
   // DataTable sorting state
   const [sortField, setSortField] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<0 | 1 | -1 | null | undefined>(1);
 
   console.log('products ....:', products);
+  console.log('total ....:', total);
+  console.log('skip ....:', skip);
+  console.log('limit ....:', limit);
   console.log('categories ....:', categories);
 
   // Handle filtering and sorting
@@ -343,12 +353,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
           </DataTable>
 
           {/* Pagination */}
-          {filteredAndSortedProducts.length > rows && (
+          {rows && (
             <nav className="flex justify-content-center p-3" aria-label="Navegación de páginas">
               <Paginator
-                first={first}
-                rows={rows}
-                totalRecords={filteredAndSortedProducts.length}
+                first={skip}
+                rows={limit}
+                totalRecords={total}
                 onPageChange={onPageChange}
                 template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
                 aria-label="Navegación de páginas de productos"

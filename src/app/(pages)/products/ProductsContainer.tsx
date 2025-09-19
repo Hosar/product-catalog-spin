@@ -8,10 +8,14 @@ import React from 'react';
 import { ProductsPresenter } from './ProductsPresenter';
 import { getProductsAndCategories } from './productsActions';
 import type { Product } from '@/types/product';
+import { Category } from '@/types/category';
 
 interface ProductsContainerProps {
   initialProducts?: Product[];
-  initialCategories?: string[];
+  initialTotal?: number;
+  initialSkip?: number;
+  initialLimit?: number;
+  initialCategories?: Category[];
   initialError?: string | null;
   className?: string;
 }
@@ -29,6 +33,9 @@ interface ProductsData {
  */
 export const ProductsContainer: React.FC<ProductsContainerProps> = ({ 
   initialProducts = [],
+  initialTotal = 0,
+  initialSkip = 0,
+  initialLimit = 0,
   initialCategories = [],
   initialError = null,
   className = '' 
@@ -38,6 +45,9 @@ export const ProductsContainer: React.FC<ProductsContainerProps> = ({
     <ProductsPresenter
       products={initialProducts}
       categories={initialCategories}
+      total={initialTotal}
+      skip={initialSkip}
+      limit={initialLimit}
       loading={false}
       error={initialError}
       className={className}

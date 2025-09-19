@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import pino from 'pino';
 import type { Product } from '@/types/product';
+import { Category } from '@/types/category';
 
 // Initialize structured logger
 const logger = pino({
@@ -17,12 +18,15 @@ const baseUrl = process.env.DOMAIN || "http://localhost:3000";
 export async function getProducts(): Promise<{
   success: boolean;
   data?: Product[];
+  total?: number;
+  skip?: number;
+  limit?: number;
   error?: string;
 }> {
   
   try {
     logger.info('Server Action: Fetching products from DummyJSON API');
-    const productsUrl = `${baseUrl}/api/products`;
+    const productsUrl = `${baseUrl}/api/products?pagesize=5&skip=0`;
     console.log('productsUrl ...:', productsUrl);
     const response = await fetch(productsUrl, {
       headers: {
@@ -41,7 +45,8 @@ export async function getProducts(): Promise<{
       return { success: false, error: errorMessage };
     }
     
-    const products: Product[] = await response.json();
+    const data = await response.json();
+    const products: Product[] = data.products;
     
     // Validate response structure
     if (!Array.isArray(products)) {
@@ -51,7 +56,7 @@ export async function getProducts(): Promise<{
     
     logger.info({ productCount: products.length }, 'Products fetched successfully via Server Action');
     
-    return { success: true, data: products };
+    return { success: true, data: products, total: data.total, skip: data.skip, limit: data.limit };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     logger.error({ error: errorMessage }, 'Error fetching products via Server Action');
@@ -66,7 +71,7 @@ export async function getProducts(): Promise<{
  */
 export async function getCategories(): Promise<{
   success: boolean;
-  data?: string[];
+  data?: Category[];
   error?: string;
 }> {
   try {
@@ -90,7 +95,7 @@ export async function getCategories(): Promise<{
       return { success: false, error: errorMessage };
     }
     
-    const categories: string[] = await response.json();
+    const categories: Category[] = await response.json();
     
     // Validate response structure
     if (!Array.isArray(categories)) {
@@ -116,7 +121,10 @@ export async function getCategories(): Promise<{
 export async function getProductsAndCategories(): Promise<{
   success: boolean;
   products?: Product[];
-  categories?: string[];
+  total?: number;
+  skip?: number;
+  limit?: number;
+  categories?: Category[];
   error?: string;
 }> {
   try {
@@ -144,6 +152,9 @@ export async function getProductsAndCategories(): Promise<{
     return {
       success: true,
       products: productsResult.data,
+      total: productsResult.total,
+      skip: productsResult.skip,
+      limit: productsResult.limit,
       categories: categoriesResult.data,
     };
   } catch (error) {

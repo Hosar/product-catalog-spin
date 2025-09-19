@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import pino from 'pino';
 import type { Product } from '@/types/product';
 
@@ -19,11 +19,19 @@ const logger = pino({
  * GET endpoint to fetch products from DummyJSON API
  * @returns JSON response with products array or error message
  */
-export async function GET(): Promise<NextResponse<Product[] | { error: string }>> {
+export async function GET(request: NextRequest): Promise<NextResponse<Product[] | { error: string }>> {
+  const { searchParams } = new URL(request.url);
+  const pageSize = searchParams.get('pagesize');
+  const skip = searchParams.get('skip');
+
+  console.log('pageSize ...:', pageSize);
+  console.log('skip ...:', skip);
+
   try {
     logger.info('Fetching products from DummyJSON API');
-    
-    const response = await fetch('https://dummyjson.com/products', {
+
+    const url = pageSize && skip ? `https://dummyjson.com/products?limit=${pageSize}&skip=${skip}` : 'https://dummyjson.com/products';
+    const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'ProductCatalog/1.0',
@@ -47,7 +55,7 @@ export async function GET(): Promise<NextResponse<Product[] | { error: string }>
     
     logger.info({ productCount: data.products.length }, 'Products fetched successfully');
     
-    return NextResponse.json(data.products, {
+    return NextResponse.json(data, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 min cache, 10 min stale
       },
