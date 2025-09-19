@@ -38,7 +38,6 @@ export const ProductsContainer: React.FC<ProductsContainerProps> = ({
       total={initialTotal}
       skip={initialSkip}
       limit={initialLimit}
-      loading={false}
       error={initialError}
       className={className}
     />

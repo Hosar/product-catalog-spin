@@ -4,15 +4,12 @@
 
 import React from 'react';
 import { Dropdown } from 'primereact/dropdown';
-import type { SortOption, CategoryOption } from '@/types/product';
+import type { CategoryOption } from '@/types/product';
 
 interface ProductFiltersProps {
   selectedCategory: string;
-  sortBy: string;
   categoryOptions: CategoryOption[];
-  sortOptions: SortOption[];
   onCategoryChange: (e: { value: string }) => void;
-  onSortChange: (e: { value: string }) => void;
   className?: string;
 }
 
@@ -23,11 +20,8 @@ interface ProductFiltersProps {
  */
 export const ProductFilters: React.FC<ProductFiltersProps> = ({
   selectedCategory,
-  sortBy,
   categoryOptions,
-  sortOptions,
   onCategoryChange,
-  onSortChange,
   className = ''
 }) => {
   return (
@@ -45,21 +39,6 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           placeholder="Seleccionar categoría"
           className="w-full md:w-20rem"
           aria-label="Filtrar productos por categoría"
-        />
-      </div>
-      
-      <div className="flex flex-column gap-2">
-        <label htmlFor="sort-dropdown" className="font-semibold">
-          Ordenar por:
-        </label>
-        <Dropdown
-          id="sort-dropdown"
-          value={sortBy}
-          options={sortOptions}
-          onChange={onSortChange}
-          placeholder="Seleccionar orden"
-          className="w-full md:w-20rem"
-          aria-label="Ordenar productos"
         />
       </div>
     </fieldset>

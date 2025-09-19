@@ -1,16 +1,23 @@
 'use client';
-import React, { useCallback, useState, useEffect } from 'react';
-import { Message } from 'primereact/message';
+// import React, { useCallback, useState, useEffect } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Paginator } from 'primereact/paginator';
-import { Image } from 'primereact/image';
-import { Tag } from 'primereact/tag';
 import { ProductFilters } from './components/ProductFilters';
+import { ProductSearch } from './components/ProductSearch';
 import { ProductsSkeleton } from './components/ProductsSkeleton';
+import { MainErrorMessage } from './components/MainErrorMessage';
 import { Chart } from 'primereact/chart';
+import {
+  ProductImageTemplate,
+  ProductTitleTemplate,
+  ProductPriceTemplate,
+  ProductCategoryTemplate,
+  ProductRatingTemplate,
+  ProductStockTemplate,
+} from './components/templates';
 // import { ProductChart } from './components/ProductChart';
-import { formatPrice, capitalize, truncateText } from '@/utils/formatters';
+import { capitalize } from '@/utils/formatters';
 import type { Product } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
 import { Category } from '@/types/category';
@@ -23,7 +30,6 @@ interface ProductsPresenterProps {
   skip: number;
   limit: number;
   categories: Category[];
-  loading: boolean;
   error: string | null;
   onRefetch?: () => Promise<void>;
   className?: string;
@@ -65,7 +71,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   skip: initialSkip,
   limit: initialLimit,
   categories: initialCategories,
-  loading: initialLoading,
   error: initialError,
   className = ''
 }) => {
@@ -97,17 +102,17 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   useUrlSync();
 
   // Initialize store with initial data (only once)
-  useEffect(() => {
-    if (!isInitialized && initialProducts.length > 0 && initialCategories.length > 0) {
-      initializeWithData({
-        products: initialProducts,
-        categories: initialCategories,
-        total: initialTotal,
-        skip: initialSkip,
-        limit: initialLimit,
-      });
-    }
-  }, [isInitialized, initialProducts, initialCategories, initialTotal, initialSkip, initialLimit, initializeWithData]);
+  // useEffect(() => {
+  //   if (!isInitialized && initialProducts.length > 0 && initialCategories.length > 0) {
+  //     initializeWithData({
+  //       products: initialProducts,
+  //       categories: initialCategories,
+  //       total: initialTotal,
+  //       skip: initialSkip,
+  //       limit: initialLimit,
+  //     });
+  //   }
+  // }, [isInitialized, initialProducts, initialCategories, initialTotal, initialSkip, initialLimit, initializeWithData]);
 
   console.log('products ....:', products);
   console.log('total ....:', total);
@@ -124,129 +129,64 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     }))
   ];
 
-  // Sort options
-  const sortOptions = [
-    { label: 'Nombre (A-Z)', value: 'title-asc' },
-    { label: 'Nombre (Z-A)', value: 'title-desc' },
-    { label: 'Precio (Menor a Mayor)', value: 'price-asc' },
-    { label: 'Precio (Mayor a Menor)', value: 'price-desc' },
-    { label: 'Calificación (Mayor a Menor)', value: 'rating-desc' },
-    { label: 'Calificación (Menor a Mayor)', value: 'rating-asc' },
-  ];
-
   // Handle pagination
-  const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
-    setSkip(event.first);
-    setLimit(event.rows);
-  }, [setSkip, setLimit]);
+  // const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
+  //   setSkip(event.first);
+  //   setLimit(event.rows);
+  // }, [setSkip, setLimit]);
 
-  // Handle filter changes with pagination reset
-  const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
-    setSelectedCategory(e.value);
-    resetPagination();
-  }, [setSelectedCategory, resetPagination]);
+  // // Handle filter changes with pagination reset
+  // const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
+  //   setSelectedCategory(e.value);
+  //   resetPagination();
+  // }, [setSelectedCategory, resetPagination]);
 
-  const handleSortChangeWithReset = useCallback((e: { value: string }) => {
-    setSortBy(e.value);
-    resetPagination();
-  }, [setSortBy, resetPagination]);
+  // const handleSortChangeWithReset = useCallback((e: { value: string }) => {
+  //   setSortBy(e.value);
+  //   resetPagination();
+  // }, [setSortBy, resetPagination]);
 
-  // Handle DataTable sorting
-  const onSort = useCallback((event: DataTableStateEvent) => {
-    setSortField(event.sortField || '');
-    setSortOrder(event.sortOrder);
-    // Reset to first page when sorting
-    resetPagination();
-  }, [setSortField, setSortOrder, resetPagination]);
+  // // Handle DataTable sorting
+  // const onSort = useCallback((event: DataTableStateEvent) => {
+  //   setSortField(event.sortField || '');
+  //   setSortOrder(event.sortOrder);
+  //   // Reset to first page when sorting
+  //   resetPagination();
+  // }, [setSortField, setSortOrder, resetPagination]);
 
-  // Column templates
-  const imageBodyTemplate = (product: Product) => {
-    return (
-      <Image
-        src={product.thumbnail}
-        alt={product.title}
-        width="60"
-        height="60"
-        className="border-round"
-        preview
-      />
-    );
-  };
-
-  const titleBodyTemplate = (product: Product) => {
-    return (
-      <div className="flex flex-column">
-        <span className="font-semibold text-900">{product.title}</span>
-        <span className="text-600 text-sm">{truncateText(product.description, 50)}</span>
-      </div>
-    );
-  };
-
-  const priceBodyTemplate = (product: Product) => {
-    const discountPrice = product.price * (1 - product.discountPercentage / 100);
-    return (
-      <div className="flex flex-column">
-        <span className="font-semibold text-900">{formatPrice(discountPrice)}</span>
-        {product.discountPercentage > 0 && (
-          <span className="text-500 text-sm line-through">{formatPrice(product.price)}</span>
-        )}
-      </div>
-    );
-  };
-
-  const categoryBodyTemplate = (product: Product) => {
-    return (
-      <Tag value={capitalize(product.category)} severity="info" />
-    );
-  };
-
-  const ratingBodyTemplate = (product: Product) => {
-    return (
-      <div className="flex align-items-center gap-2">
-        <span className="font-semibold">{product.rating}</span>
-        <i className="pi pi-star-fill text-yellow-500"></i>
-      </div>
-    );
-  };
-
-  const stockBodyTemplate = (product: Product) => {
-    const severity = product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger';
-    return (
-      <Tag value={product.stock.toString()} severity={severity} />
-    );
-  };
+  // Column templates using separate components
+  const imageBodyTemplate = (product: Product) => <ProductImageTemplate product={product} />;
+  const titleBodyTemplate = (product: Product) => <ProductTitleTemplate product={product} />;
+  const priceBodyTemplate = (product: Product) => <ProductPriceTemplate product={product} />;
+  const categoryBodyTemplate = (product: Product) => <ProductCategoryTemplate product={product} />;
+  const ratingBodyTemplate = (product: Product) => <ProductRatingTemplate product={product} />;
+  const stockBodyTemplate = (product: Product) => <ProductStockTemplate product={product} />;
 
   const brandBodyTemplate = (product: Product) => {
     return <span className="font-medium">{product.sku}</span>;
   };
 
   // Handle product selection (for future functionality)
-  const handleProductSelect = useCallback((event: DataTableSelectEvent) => {
-    // TODO: Implement product detail view or modal
-    console.log('Product selected:', event.data);
-  }, []);
+  // const handleProductSelect = useCallback((event: DataTableSelectEvent) => {
+  //   // TODO: Implement product detail view or modal
+  //   console.log('Product selected:', event.data);
+  // }, []);
 
-  // Loading state
-  if (loading) {
-    return <ProductsSkeleton className={className} />;
+  const handleCategoryChangeWithReset = (e: { value: string }) => {
+    console.log('handleCategoryChangeWithReset ...:', e);
+  };
+
+  const onPageChange = () => {
+    console.log('onPageChange ...:');
   }
 
-  // Error state
-  if (error) {
-    return (
-      <main className={`grid ${className}`}>
-        <div className="col-12">
-          <section className="px-4 py-6" aria-label="Mensaje de error">
-            <Message
-              severity="error"
-              text={error}
-              aria-label={`Error: ${error}`}
-            />
-          </section>
-        </div>
-      </main>
-    );
-  }
+  const onSort = (e: DataTableStateEvent) => {
+    console.log('onSort ...:', e);
+  };
+
+  const handleProductSelect = (e: DataTableSelectEvent) => {
+  console.log('handleProductSelect ...:', e);
+  };
 
   return (
     <main className={`grid ${className}`}>
@@ -261,14 +201,14 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             Catálogo de Productos
           </h1>
           
+          {/* Search */}
+          <ProductSearch />
+          
           {/* Filters and Sort */}
           <ProductFilters
             selectedCategory={selectedCategory}
-            sortBy={sortBy}
             categoryOptions={categoryOptions}
-            sortOptions={sortOptions}
             onCategoryChange={handleCategoryChangeWithReset}
-            onSortChange={handleSortChangeWithReset}
           />
         </header>
 

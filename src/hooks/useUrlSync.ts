@@ -22,6 +22,7 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     sortBy,
     sortField,
     sortOrder,
+    searchQuery,
     isInitialized,
     setSkip,
     setLimit,
@@ -29,7 +30,9 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     setSortBy,
     setSortField,
     setSortOrder,
+    setSearchQuery,
     fetchProducts,
+    searchProducts,
   } = useProductsStore();
 
   // Update URL when store state changes
@@ -45,10 +48,11 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     if (sortBy !== 'title-asc') params.set('sort', sortBy);
     if (sortField) params.set('sortField', sortField);
     if (sortOrder !== 1) params.set('sortOrder', sortOrder?.toString() || '1');
+    if (searchQuery) params.set('q', searchQuery);
     
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     router.replace(newUrl, { scroll: false });
-  }, [skip, limit, selectedCategory, sortBy, sortField, sortOrder, router, isInitialized]);
+  }, [skip, limit, selectedCategory, sortBy, sortField, sortOrder, searchQuery, router, isInitialized]);
 
   // Debounced URL update
   useEffect(() => {
@@ -64,9 +68,10 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     const urlSort = searchParams.get('sort');
     const urlSortField = searchParams.get('sortField');
     const urlSortOrder = searchParams.get('sortOrder');
+    const urlSearchQuery = searchParams.get('q');
 
     // Only initialize if we have URL parameters and store is not initialized yet
-    if (!isInitialized && (urlSkip || urlLimit || urlCategory || urlSort || urlSortField || urlSortOrder)) {
+    if (!isInitialized && (urlSkip || urlLimit || urlCategory || urlSort || urlSortField || urlSortOrder || urlSearchQuery)) {
       let hasChanges = false;
 
       if (urlSkip && parseInt(urlSkip) !== skip) {
@@ -99,14 +104,25 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
         hasChanges = true;
       }
 
+      if (urlSearchQuery !== searchQuery) {
+        setSearchQuery(urlSearchQuery || '');
+        hasChanges = true;
+      }
+
       // Fetch products if URL parameters changed
       if (hasChanges) {
         const finalSkip = urlSkip ? parseInt(urlSkip) : skip;
         const finalLimit = urlLimit ? parseInt(urlLimit) : limit;
         const finalCategory = urlCategory || selectedCategory;
         const finalSort = urlSort || sortBy;
+        const finalSearchQuery = urlSearchQuery || searchQuery;
         
-        fetchProducts(finalSkip, finalLimit, finalCategory, finalSort);
+        // If there's a search query, use search API, otherwise use regular fetch
+        if (finalSearchQuery) {
+          searchProducts(finalSearchQuery, finalSkip, finalLimit);
+        } else {
+          fetchProducts(finalSkip, finalLimit, finalCategory, finalSort);
+        }
       }
     }
   }, [isInitialized]); // Only run when initialization state changes
@@ -116,7 +132,11 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     // Only fetch if store is initialized and we have changes from user interaction
     if (!isInitialized) return;
 
-    fetchProducts();
+    // Only fetch regular products when pagination or filters change
+    // Search is now handled manually by the search button
+    if (!searchQuery) {
+      fetchProducts(skip, limit, selectedCategory, sortBy);
+    }
   }, [skip, limit, selectedCategory, sortBy, fetchProducts, isInitialized]);
 
   return {

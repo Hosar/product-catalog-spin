@@ -41,7 +41,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<DummyJsonR
     if (pageSize) dummyJsonParams.set('limit', pageSize);
     if (skip) dummyJsonParams.set('skip', skip);
     if (category) dummyJsonParams.set('category', category);
-    if (sort) dummyJsonParams.set('sort', sort);
+    if (sort) dummyJsonParams.set('sortBy', sort);
     if (order) dummyJsonParams.set('order', order);
 
     const url = `https://dummyjson.com/products?${dummyJsonParams.toString()}`;

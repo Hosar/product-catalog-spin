@@ -19,6 +19,10 @@ interface ProductsState {
   selectedCategory: string;
   sortBy: string;
   
+  // Search state
+  searchQuery: string;
+  isSearching: boolean;
+  
   // DataTable sorting state
   sortField: string;
   sortOrder: 0 | 1 | -1 | null | undefined;
@@ -43,6 +47,10 @@ interface ProductsState {
   setSortBy: (sortBy: string) => void;
   setFilters: (category: string, sortBy: string) => void;
   
+  // Search actions
+  setSearchQuery: (query: string) => void;
+  setIsSearching: (isSearching: boolean) => void;
+  
   // DataTable sorting actions
   setSortField: (sortField: string) => void;
   setSortOrder: (sortOrder: 0 | 1 | -1 | null | undefined) => void;
@@ -51,6 +59,7 @@ interface ProductsState {
   // Combined actions
   resetFilters: () => void;
   resetPagination: () => void;
+  resetSearch: () => void;
   resetAll: () => void;
   
   // Initialization actions
@@ -64,6 +73,7 @@ interface ProductsState {
   
   // API actions
   fetchProducts: (skip?: number, limit?: number, category?: string, sortBy?: string) => Promise<void>;
+  searchProducts: (query: string, skip?: number, limit?: number) => Promise<void>;
 }
 
 const DEFAULT_SORT = 'title-asc';
@@ -84,6 +94,8 @@ export const useProductsStore = create<ProductsState>()(
         limit: DEFAULT_LIMIT,
         selectedCategory: '',
         sortBy: DEFAULT_SORT,
+        searchQuery: '',
+        isSearching: false,
         sortField: '',
         sortOrder: 1,
         isInitialized: false,
@@ -105,6 +117,10 @@ export const useProductsStore = create<ProductsState>()(
         setSortBy: (sortBy) => set({ sortBy }),
         setFilters: (selectedCategory, sortBy) => set({ selectedCategory, sortBy }),
         
+        // Search setters
+        setSearchQuery: (searchQuery) => set({ searchQuery }),
+        setIsSearching: (isSearching) => set({ isSearching }),
+        
         // DataTable sorting setters
         setSortField: (sortField) => set({ sortField }),
         setSortOrder: (sortOrder) => set({ sortOrder }),
@@ -121,6 +137,10 @@ export const useProductsStore = create<ProductsState>()(
           skip: DEFAULT_SKIP, 
           limit: DEFAULT_LIMIT 
         }),
+        resetSearch: () => set({
+          searchQuery: '',
+          isSearching: false,
+        }),
         resetAll: () => set({
           products: [],
           categories: [],
@@ -131,6 +151,8 @@ export const useProductsStore = create<ProductsState>()(
           limit: DEFAULT_LIMIT,
           selectedCategory: '',
           sortBy: DEFAULT_SORT,
+          searchQuery: '',
+          isSearching: false,
           sortField: '',
           sortOrder: 1,
           isInitialized: false,
@@ -206,6 +228,54 @@ export const useProductsStore = create<ProductsState>()(
             console.error('Error fetching products:', err);
           }
         },
+        
+        // Search products action
+        searchProducts: async (query, skip, limit) => {
+          const state = get();
+          const currentSkip = skip ?? state.skip;
+          const currentLimit = limit ?? state.limit;
+          
+          set({ loading: true, error: null, isSearching: true });
+          
+          try {
+            // Build query parameters
+            const params = new URLSearchParams({
+              q: query,
+              skip: currentSkip.toString(),
+              limit: currentLimit.toString(),
+            });
+            
+            const response = await fetch(`/api/products/search?${params.toString()}`);
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            
+            set({
+              products: data.products,
+              total: data.total,
+              skip: data.skip,
+              limit: data.limit,
+              loading: false,
+              error: null,
+              isSearching: true, // Keep isSearching true when in search mode
+            });
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Error al buscar productos';
+            set({
+              loading: false,
+              error: errorMessage,
+              isSearching: false,
+            });
+            console.error('Error searching products:', err);
+          }
+        },
       }),
       {
         name: 'products-store',
@@ -215,6 +285,7 @@ export const useProductsStore = create<ProductsState>()(
           limit: state.limit,
           selectedCategory: state.selectedCategory,
           sortBy: state.sortBy,
+          searchQuery: state.searchQuery,
           sortField: state.sortField,
           sortOrder: state.sortOrder,
         }),
