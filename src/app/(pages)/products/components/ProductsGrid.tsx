@@ -6,7 +6,7 @@ import React from 'react';
 import { Paginator } from 'primereact/paginator';
 import { Card } from 'primereact/card';
 import { ProductCard } from './ProductCard';
-import { ProductSkeleton } from './ProductSkeleton';
+import { ProductCardSkeleton } from './ProductCardSkeleton';
 import type { Product, PaginationEvent } from '@/types/product';
 
 interface ProductsGridProps {
@@ -40,7 +40,7 @@ export const ProductsGrid: React.FC<ProductsGridProps> = ({
       <div className={`grid ${className}`}>
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="col-12 md:col-6 lg:col-4 xl:col-3">
-            <ProductSkeleton />
+            <ProductCardSkeleton />
           </div>
         ))}
       </div>

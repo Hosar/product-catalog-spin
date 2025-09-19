@@ -15,7 +15,7 @@ interface ProductSkeletonProps {
  * @param props - Component props
  * @returns JSX element representing a loading skeleton
  */
-export const ProductSkeleton: React.FC<ProductSkeletonProps> = ({ 
+export const ProductCardSkeleton: React.FC<ProductSkeletonProps> = ({ 
   className = '' 
 }) => (
   <Card className={`h-full ${className}`}>
