@@ -1,27 +1,27 @@
 /**
- * ProductSearch component for searching products with search button and cancel functionality
+ * ProductSearch component for real-time product search with debounced input
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
+import { IconField } from 'primereact/iconfield';
+import { InputIcon } from 'primereact/inputicon';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ProductSearchProps {
   className?: string;
 }
 
 /**
- * ProductSearch component provides search functionality with search button and cancel functionality
+ * ProductSearch component provides real-time search functionality with debounced input
  * @param props - Component props
- * @returns JSX element representing search input with buttons
+ * @returns JSX element representing search input with real-time search
  */
 export const ProductSearch: React.FC<ProductSearchProps> = ({
   className = ''
 }) => {
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
   
   // Next.js URL hooks
   const searchParams = useSearchParams();
@@ -31,19 +31,13 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
   // Get current search query from URL
   const currentSearchQuery = searchParams.get('q') || '';
 
+  // Debounce the input value with 500ms delay
+  const debouncedSearchQuery = useDebounce(inputValue, 500);
+
   // Initialize input value from URL
   useEffect(() => {
     setInputValue(currentSearchQuery);
   }, [currentSearchQuery]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
 
   // Function to update URL parameters
   const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
@@ -61,35 +55,23 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
     router.replace(`${pathname}${newUrl}`, { scroll: false });
   }, [searchParams, pathname, router]);
 
+  // Handle debounced search - update URL when debounced value changes
+  useEffect(() => {
+    const trimmedQuery = debouncedSearchQuery.trim();
+    
+    // Only update URL if the debounced value is different from current URL query
+    if (trimmedQuery !== currentSearchQuery) {
+      updateUrlParams({
+        q: trimmedQuery || null,
+        skip: 0, // Reset to first page when searching
+      });
+    }
+  }, [debouncedSearchQuery, currentSearchQuery, updateUrlParams]);
+
   // Handle input change
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   }, []);
-
-  // Handle search button click
-  const handleSearch = useCallback(() => {
-    if (!inputValue.trim()) {
-      return;
-    }
-
-    // Update URL with search query and reset pagination
-    updateUrlParams({
-      q: inputValue.trim(),
-      skip: 0, // Reset to first page
-    });
-  }, [inputValue, updateUrlParams]);
-
-  // Handle cancel button click
-  const handleCancel = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    setInputValue('');
-    updateUrlParams({
-      q: null, // Remove search query
-      skip: 0, // Reset to first page
-    });
-  }, [updateUrlParams]);
 
   // Handle clear search
   const handleClearSearch = useCallback(() => {
@@ -100,64 +82,22 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
     });
   }, [updateUrlParams]);
 
-  // Handle Enter key press
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  }, [handleSearch]);
-
   return (
-    <div className={`flex flex-column gap-2 ${className}`}>
+    <form className={`flex flex-column gap-2 ${className}`} role="search" aria-label="Búsqueda de productos">
       <label htmlFor="product-search" className="font-semibold">
         Buscar productos:
       </label>
-      <div className="flex gap-2">
-        <div className="p-input-icon-left p-input-icon-right flex-1">
-          <i className="pi pi-search" />
-          <InputText
-            id="product-search"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyPress}
-            placeholder="Buscar productos..."
-            className="w-full"
-            aria-label="Buscar productos"
-            disabled={loading}
-          />
-          {inputValue && (
-            <i 
-              className="pi pi-times cursor-pointer" 
-              onClick={handleClearSearch}
-              aria-label="Limpiar búsqueda"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleClearSearch();
-                }
-              }}
-            />
-          )}
-        </div>
-        <Button
-          label="Buscar"
-          icon="pi pi-search"
-          onClick={handleSearch}
-          disabled={!inputValue.trim() || loading}
-          loading={loading}
-          aria-label="Ejecutar búsqueda"
+      <IconField iconPosition="left">
+        <InputIcon className="pi pi-search"> </InputIcon>
+        <InputText
+          id="product-search"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="Buscar productos..."
+          className="w-full"
+          aria-label="Buscar productos"
         />
-        {loading && (
-          <Button
-            label="Cancelar"
-            icon="pi pi-times"
-            severity="secondary"
-            onClick={handleCancel}
-            aria-label="Cancelar búsqueda"
-          />
-        )}
-      </div>
-    </div>
+      </IconField>
+    </form>
   );
 };

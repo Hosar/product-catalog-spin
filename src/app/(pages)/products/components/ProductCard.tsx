@@ -36,9 +36,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       aria-label={`Producto: ${product.title}`}
       onClick={handleClick}
     >
-      <div className="flex flex-column gap-3 h-full">
+      <article className="flex flex-column gap-3 h-full">
         {/* Product Image */}
-        <div className="relative">
+        <figure className="relative m-0">
           <Image
             src={product.thumbnail}
             alt={product.title}
@@ -56,10 +56,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               aria-label={`Descuento del ${product.discountPercentage}%`}
             />
           )}
-        </div>
+        </figure>
 
         {/* Product Info */}
-        <div className="flex flex-column gap-2 flex-1">
+        <section className="flex flex-column gap-2 flex-1">
           <h3 
             className="text-lg font-semibold m-0 line-height-3" 
             aria-label={`Título del producto: ${product.title}`}
@@ -117,8 +117,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               aria-label={`Categoría: ${product.category}`}
             />
           </div>
-        </div>
-      </div>
+        </section>
+      </article>
     </Card>
   );
 };

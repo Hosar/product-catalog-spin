@@ -37,13 +37,13 @@ export const ProductsGrid: React.FC<ProductsGridProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className={`grid ${className}`}>
+      <section className={`grid ${className}`} aria-label="Cargando productos">
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="col-12 md:col-6 lg:col-4 xl:col-3">
             <ProductCardSkeleton />
           </div>
         ))}
-      </div>
+      </section>
     );
   }
 
@@ -62,7 +62,7 @@ export const ProductsGrid: React.FC<ProductsGridProps> = ({
   }
 
   return (
-    <div className={className}>
+    <main className={className}>
       {/* Products Grid */}
       <section className="grid" aria-label="Lista de productos">
         {products.map((product) => (
@@ -88,6 +88,6 @@ export const ProductsGrid: React.FC<ProductsGridProps> = ({
           />
         </nav>
       )}
-    </div>
+    </main>
   );
 };

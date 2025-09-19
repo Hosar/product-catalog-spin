@@ -16,7 +16,7 @@ export const ProductsSkeleton: React.FC<ProductsSkeletonProps> = ({
   return (
     <main className={`grid ${className}`}>
       <div className="col-12">
-        <div className="flex flex-column gap-4 px-4 py-6">
+        <section className="flex flex-column gap-4 px-4 py-6">
           {/* Header skeleton */}
           <header className="flex flex-column gap-3">
             <Skeleton width="300px" height="2rem" />
@@ -49,7 +49,7 @@ export const ProductsSkeleton: React.FC<ProductsSkeletonProps> = ({
               ))}
             </div>
           </section>
-        </div>
+        </section>
       </div>
     </main>
   );

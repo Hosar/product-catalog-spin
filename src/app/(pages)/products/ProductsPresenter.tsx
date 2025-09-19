@@ -180,7 +180,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   return (
     <main className={`grid ${className}`}>
       <div className="col-12">
-        <div className="flex flex-column gap-4 px-4 py-6">
+        <section className="flex flex-column gap-4 px-4 py-6">
         {/* Header */}
         <header className="flex flex-column gap-3">
           <h1 
@@ -286,7 +286,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             />
           </nav>
         </section>
-        </div>
+        </section>
       </div>
     </main>
   );
