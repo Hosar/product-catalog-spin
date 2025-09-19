@@ -9,13 +9,22 @@
  * @example
  * formatPrice(29.99) // Returns "$29.99"
  */
-export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-MX', {
+export function formatPrice(
+  value: number,
+  locale: string = 'es-MX',
+  currency: string = 'MXN',
+  options: Intl.NumberFormatOptions = {}
+) {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2
-  }).format(price);
-};
+    currency,
+    // good defaults for MXN:
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    currencySign: 'standard', // or 'accounting' for negatives as (−)
+    ...options,
+  }).format(value);
+}
 
 /**
  * Capitalizes the first letter of a string
