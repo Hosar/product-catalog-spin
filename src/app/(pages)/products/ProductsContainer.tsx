@@ -1,6 +1,6 @@
 /**
  * ProductsContainer component - Container component that handles initial data
- * The presenter component now uses Zustand store for state management and URL synchronization
+ * The presenter component now uses Next.js URL hooks for state management
  */
 
 import React from 'react';
@@ -20,7 +20,7 @@ interface ProductsContainerProps {
 
 /**
  * Container component that manages initial data and passes it to the presenter
- * The presenter component now uses Zustand store for state management and URL synchronization
+ * The presenter component now uses Next.js URL hooks for state management
  */
 export const ProductsContainer: React.FC<ProductsContainerProps> = ({ 
   initialProducts = [],

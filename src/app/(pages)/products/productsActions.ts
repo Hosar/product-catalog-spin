@@ -13,9 +13,18 @@ const baseUrl = process.env.DOMAIN || "http://localhost:3000";
 
 /**
  * Fetches all products from the external API
+ * @param params - URL parameters for filtering, sorting, and pagination
  * @returns Promise with products array or error
  */
-export async function getProducts(): Promise<{
+export async function getProducts(params: {
+  skip?: number;
+  limit?: number;
+  category?: string;
+  sort?: string;
+  sortField?: string;
+  sortOrder?: string;
+  searchQuery?: string;
+} = {}): Promise<{
   success: boolean;
   data?: Product[];
   total?: number;
@@ -23,19 +32,80 @@ export async function getProducts(): Promise<{
   limit?: number;
   error?: string;
 }> {
+  const {
+    skip = 0,
+    limit = 10,
+    category = '',
+    sort = 'title-asc',
+    sortField = '',
+    sortOrder = '1',
+    searchQuery = ''
+  } = params;
   
   try {
-    logger.info('Server Action: Fetching products from DummyJSON API');
-    const productsUrl = `${baseUrl}/api/products?pagesize=10&skip=0`;
+    logger.info({ skip, limit, category, sort, searchQuery }, 'Server Action: Fetching products from DummyJSON API');
+    
+    // If there's a search query, use the search API
+    if (searchQuery) {
+      const searchUrl = `${baseUrl}/api/products/search?q=${encodeURIComponent(searchQuery)}&skip=${skip}&limit=${limit}`;
+      console.log('searchUrl ...:', searchUrl);
+      
+      const response = await fetch(searchUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'ProductCatalog/1.0',
+        },
+        signal: AbortSignal.timeout(10000),
+        cache: 'force-cache',
+        next: { revalidate: 300 }
+      });
+      
+      if (!response.ok) {
+        const errorMessage = `HTTP error! status: ${response.status}`;
+        logger.error({ status: response.status, statusText: response.statusText }, errorMessage);
+        return { success: false, error: errorMessage };
+      }
+      
+      const data = await response.json();
+      const products: Product[] = data.products;
+      
+      if (!Array.isArray(products)) {
+        logger.error('Invalid response format from search API');
+        return { success: false, error: 'Invalid response format from search API' };
+      }
+      
+      logger.info({ productCount: products.length }, 'Products fetched successfully via search API');
+      return { success: true, data: products, total: data.total, skip: data.skip, limit: data.limit };
+    }
+    
+    // Build regular products API URL with parameters
+    const productsParams = new URLSearchParams({
+      pagesize: limit.toString(),
+      skip: skip.toString(),
+    });
+    
+    if (category) {
+      productsParams.set('category', category);
+    }
+    
+    if (sort !== 'title-asc') {
+      const [sortFieldName, sortOrderName] = sort.split('-');
+      if (sortFieldName && sortOrderName) {
+        productsParams.set('sort', sortFieldName);
+        productsParams.set('order', sortOrderName);
+      }
+    }
+    
+    const productsUrl = `${baseUrl}/api/products?${productsParams.toString()}`;
     console.log('productsUrl ...:', productsUrl);
+    
     const response = await fetch(productsUrl, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'ProductCatalog/1.0',
       },
-      // Add timeout for external API calls
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-      cache: 'force-cache', // Cache for 5 minutes
+      signal: AbortSignal.timeout(10000),
+      cache: 'force-cache',
       next: { revalidate: 300 }
     });
     
@@ -48,7 +118,6 @@ export async function getProducts(): Promise<{
     const data = await response.json();
     const products: Product[] = data.products;
     
-    // Validate response structure
     if (!Array.isArray(products)) {
       logger.error('Invalid response format from external API');
       return { success: false, error: 'Invalid response format from external API' };
@@ -116,9 +185,18 @@ export async function getCategories(): Promise<{
 
 /**
  * Fetches both products and categories in parallel
+ * @param params - URL parameters for filtering, sorting, and pagination
  * @returns Promise with both products and categories data
  */
-export async function getProductsAndCategories(): Promise<{
+export async function getProductsAndCategories(params: {
+  skip?: number;
+  limit?: number;
+  category?: string;
+  sort?: string;
+  sortField?: string;
+  sortOrder?: string;
+  searchQuery?: string;
+} = {}): Promise<{
   success: boolean;
   products?: Product[];
   total?: number;
@@ -128,10 +206,10 @@ export async function getProductsAndCategories(): Promise<{
   error?: string;
 }> {
   try {
-    logger.info('Server Action: Fetching products and categories in parallel');
+    logger.info(params, 'Server Action: Fetching products and categories in parallel');
     
     const [productsResult, categoriesResult] = await Promise.all([
-      getProducts(),
+      getProducts(params),
       getCategories(),
     ]);
 

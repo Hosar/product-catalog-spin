@@ -1,5 +1,5 @@
 'use client';
-// import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Paginator } from 'primereact/paginator';
@@ -16,13 +16,11 @@ import {
   ProductRatingTemplate,
   ProductStockTemplate,
 } from './components/templates';
-// import { ProductChart } from './components/ProductChart';
 import { capitalize } from '@/utils/formatters';
 import type { Product } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
 import { Category } from '@/types/category';
-import { useProductsStore } from '@/lib/stores/productsStore';
-import { useUrlSync } from '@/hooks/useUrlSync';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 
 interface ProductsPresenterProps {
   products: Product[];
@@ -74,51 +72,51 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   error: initialError,
   className = ''
 }) => {
-  // Zustand store
-  const {
-    products,
-    categories,
-    total,
-    skip,
-    limit,
-    loading,
-    error,
-    selectedCategory,
-    sortBy,
-    sortField,
-    sortOrder,
-    isInitialized,
-    setSkip,
-    setLimit,
-    setSelectedCategory,
-    setSortBy,
-    setSortField,
-    setSortOrder,
-    resetPagination,
-    initializeWithData,
-  } = useProductsStore();
+  // Next.js URL hooks
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  // URL synchronization
-  useUrlSync();
+  // Local state for UI
+  const [loading, setLoading] = useState(false);
 
-  // Initialize store with initial data (only once)
-  // useEffect(() => {
-  //   if (!isInitialized && initialProducts.length > 0 && initialCategories.length > 0) {
-  //     initializeWithData({
-  //       products: initialProducts,
-  //       categories: initialCategories,
-  //       total: initialTotal,
-  //       skip: initialSkip,
-  //       limit: initialLimit,
-  //     });
-  //   }
-  // }, [isInitialized, initialProducts, initialCategories, initialTotal, initialSkip, initialLimit, initializeWithData]);
+  // Get current URL parameters
+  const currentSkip = parseInt(searchParams.get('skip') || initialSkip.toString());
+  const currentLimit = parseInt(searchParams.get('limit') || initialLimit.toString());
+  const currentCategory = searchParams.get('category') || '';
+  const currentSort = searchParams.get('sort') || 'title-asc';
+  const currentSortField = searchParams.get('sortField') || '';
+  const currentSortOrder = parseInt(searchParams.get('sortOrder') || '1') as 0 | 1 | -1;
+  const currentSearchQuery = searchParams.get('q') || '';
 
-  console.log('products ....:', products);
-  console.log('total ....:', total);
-  console.log('skip ....:', skip);
-  console.log('limit ....:', limit);
-  console.log('categories ....:', categories);
+  // Use initial data or current URL state
+  const products = initialProducts;
+  const total = initialTotal;
+  const skip = currentSkip;
+  const limit = currentLimit;
+  const categories = initialCategories;
+  const error = initialError;
+  const selectedCategory = currentCategory;
+  const sortBy = currentSort;
+  const sortField = currentSortField;
+  const sortOrder = currentSortOrder;
+  const searchQuery = currentSearchQuery;
+
+  // Function to update URL parameters
+  const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 0) {
+        params.delete(key);
+      } else {
+        params.set(key, value.toString());
+      }
+    });
+
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    router.replace(`${pathname}${newUrl}`, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // Create category options for dropdown
   const categoryOptions = [
@@ -130,29 +128,36 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   ];
 
   // Handle pagination
-  // const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
-  //   setSkip(event.first);
-  //   setLimit(event.rows);
-  // }, [setSkip, setLimit]);
+  const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
+    updateUrlParams({
+      skip: event.first,
+      limit: event.rows,
+    });
+  }, [updateUrlParams]);
 
-  // // Handle filter changes with pagination reset
-  // const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
-  //   setSelectedCategory(e.value);
-  //   resetPagination();
-  // }, [setSelectedCategory, resetPagination]);
+  // Handle filter changes with pagination reset
+  const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
+    updateUrlParams({
+      category: e.value,
+      skip: 0, // Reset to first page
+    });
+  }, [updateUrlParams]);
 
-  // const handleSortChangeWithReset = useCallback((e: { value: string }) => {
-  //   setSortBy(e.value);
-  //   resetPagination();
-  // }, [setSortBy, resetPagination]);
+  const handleSortChangeWithReset = useCallback((e: { value: string }) => {
+    updateUrlParams({
+      sort: e.value,
+      skip: 0, // Reset to first page
+    });
+  }, [updateUrlParams]);
 
-  // // Handle DataTable sorting
-  // const onSort = useCallback((event: DataTableStateEvent) => {
-  //   setSortField(event.sortField || '');
-  //   setSortOrder(event.sortOrder);
-  //   // Reset to first page when sorting
-  //   resetPagination();
-  // }, [setSortField, setSortOrder, resetPagination]);
+  // Handle DataTable sorting
+  const onSort = useCallback((event: DataTableStateEvent) => {
+    updateUrlParams({
+      sortField: event.sortField || '',
+      sortOrder: event.sortOrder || 1,
+      skip: 0, // Reset to first page when sorting
+    });
+  }, [updateUrlParams]);
 
   // Column templates using separate components
   const imageBodyTemplate = (product: Product) => <ProductImageTemplate product={product} />;
@@ -167,26 +172,10 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   };
 
   // Handle product selection (for future functionality)
-  // const handleProductSelect = useCallback((event: DataTableSelectEvent) => {
-  //   // TODO: Implement product detail view or modal
-  //   console.log('Product selected:', event.data);
-  // }, []);
-
-  const handleCategoryChangeWithReset = (e: { value: string }) => {
-    console.log('handleCategoryChangeWithReset ...:', e);
-  };
-
-  const onPageChange = () => {
-    console.log('onPageChange ...:');
-  }
-
-  const onSort = (e: DataTableStateEvent) => {
-    console.log('onSort ...:', e);
-  };
-
-  const handleProductSelect = (e: DataTableSelectEvent) => {
-  console.log('handleProductSelect ...:', e);
-  };
+  const handleProductSelect = useCallback((event: DataTableSelectEvent) => {
+    // TODO: Implement product detail view or modal
+    console.log('Product selected:', event.data);
+  }, []);
 
   return (
     <main className={`grid ${className}`}>

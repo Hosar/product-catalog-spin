@@ -2,8 +2,9 @@
  * ProductFilters component for filtering and sorting products
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Dropdown } from 'primereact/dropdown';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import type { CategoryOption } from '@/types/product';
 
 interface ProductFiltersProps {
@@ -24,6 +25,36 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   onCategoryChange,
   className = ''
 }) => {
+  // Next.js URL hooks
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Function to update URL parameters
+  const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 0) {
+        params.delete(key);
+      } else {
+        params.set(key, value.toString());
+      }
+    });
+
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    router.replace(`${pathname}${newUrl}`, { scroll: false });
+  }, [searchParams, pathname, router]);
+
+  // Handle category change with URL update
+  const handleCategoryChange = useCallback((e: { value: string }) => {
+    updateUrlParams({
+      category: e.value,
+      skip: 0, // Reset to first page
+    });
+    onCategoryChange(e);
+  }, [updateUrlParams, onCategoryChange]);
+
   return (
     <fieldset className={`flex flex-column md:flex-row gap-3 ${className}`}>
       <legend className="sr-only">Filtros y ordenamiento de productos</legend>
@@ -35,7 +66,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           id="category-filter"
           value={selectedCategory}
           options={categoryOptions}
-          onChange={onCategoryChange}
+          onChange={handleCategoryChange}
           placeholder="Seleccionar categoría"
           className="w-full md:w-20rem"
           aria-label="Filtrar productos por categoría"

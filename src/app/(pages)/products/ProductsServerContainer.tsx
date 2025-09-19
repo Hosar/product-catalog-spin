@@ -11,6 +11,15 @@ import { Category } from '@/types/category';
 
 interface ProductsServerContainerProps {
   className?: string;
+  searchParams?: {
+    skip?: string;
+    limit?: string;
+    category?: string;
+    sort?: string;
+    sortField?: string;
+    sortOrder?: string;
+    q?: string;
+  };
 }
 
 /**
@@ -19,10 +28,28 @@ interface ProductsServerContainerProps {
  * Initial render is completely server-side with no client-side data fetching
  */
 export async function ProductsServerContainer({ 
-  className = '' 
+  className = '',
+  searchParams = {}
 }: ProductsServerContainerProps) {
-  // Fetch initial data on the server using the combined action
-  const { success, categories, products, error, total, skip, limit } = await getProductsAndCategories();
+  // Extract URL parameters with defaults
+  const skip = parseInt(searchParams.skip || '0');
+  const limit = parseInt(searchParams.limit || '10');
+  const category = searchParams.category || '';
+  const sort = searchParams.sort || 'title-asc';
+  const sortField = searchParams.sortField || '';
+  const sortOrder = searchParams.sortOrder || '1';
+  const searchQuery = searchParams.q || '';
+
+  // Fetch initial data on the server using the combined action with URL parameters
+  const { success, categories, products, error, total, skip: resultSkip, limit: resultLimit } = await getProductsAndCategories({
+    skip,
+    limit,
+    category,
+    sort,
+    sortField,
+    sortOrder,
+    searchQuery,
+  });
 
   // Extract data or provide defaults
   const initialProducts: Product[] = success ? (products || []) : [];
@@ -34,8 +61,8 @@ export async function ProductsServerContainer({
       initialProducts={initialProducts}
       initialCategories={initialCategories}
       initialTotal={total}
-      initialSkip={skip}
-      initialLimit={limit}
+      initialSkip={resultSkip}
+      initialLimit={resultLimit}
       initialError={initialError}
       className={className}
     />

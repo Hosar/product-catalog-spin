@@ -5,7 +5,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { useProductsStore } from '@/lib/stores/productsStore';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 
 interface ProductSearchProps {
   className?: string;
@@ -20,21 +20,21 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
   className = ''
 }) => {
   const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  const {
-    searchQuery,
-    loading,
-    setSearchQuery,
-    searchProducts,
-    resetPagination,
-    resetSearch,
-  } = useProductsStore();
+  // Next.js URL hooks
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  // Initialize input value from store
+  // Get current search query from URL
+  const currentSearchQuery = searchParams.get('q') || '';
+
+  // Initialize input value from URL
   useEffect(() => {
-    setInputValue(searchQuery);
-  }, [searchQuery]);
+    setInputValue(currentSearchQuery);
+  }, [currentSearchQuery]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -45,48 +45,63 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
     };
   }, []);
 
+  // Function to update URL parameters
+  const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 0) {
+        params.delete(key);
+      } else {
+        params.set(key, value.toString());
+      }
+    });
+
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    router.replace(`${pathname}${newUrl}`, { scroll: false });
+  }, [searchParams, pathname, router]);
+
   // Handle input change
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   }, []);
 
   // Handle search button click
-  const handleSearch = useCallback(async () => {
+  const handleSearch = useCallback(() => {
     if (!inputValue.trim()) {
       return;
     }
 
-    // Cancel previous request if it exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new AbortController for this request
-    abortControllerRef.current = new AbortController();
-
-    setSearchQuery(inputValue.trim());
-    resetPagination();
-    await searchProducts(inputValue.trim());
-  }, [inputValue, setSearchQuery, resetPagination, searchProducts]);
+    // Update URL with search query and reset pagination
+    updateUrlParams({
+      q: inputValue.trim(),
+      skip: 0, // Reset to first page
+    });
+  }, [inputValue, updateUrlParams]);
 
   // Handle cancel button click
   const handleCancel = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    resetSearch();
     setInputValue('');
-  }, [resetSearch]);
+    updateUrlParams({
+      q: null, // Remove search query
+      skip: 0, // Reset to first page
+    });
+  }, [updateUrlParams]);
 
   // Handle clear search
   const handleClearSearch = useCallback(() => {
     setInputValue('');
-    resetSearch();
-  }, [resetSearch]);
+    updateUrlParams({
+      q: null, // Remove search query
+      skip: 0, // Reset to first page
+    });
+  }, [updateUrlParams]);
 
   // Handle Enter key press
   const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    console.log('e.key ....:', e.key);
     if (e.key === 'Enter') {
       handleSearch();
     }
