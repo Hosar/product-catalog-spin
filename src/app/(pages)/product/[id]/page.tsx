@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Product } from './Product';
+import { getProduct } from './productDetailsActions';
 import type { Product as ProductType } from '@/types/product';
 
 interface ProductPageProps {
@@ -20,20 +21,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   try {
-    // Fetch product data from our API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products/${id}`, {
-      cache: 'force-cache', // Cache the product data
-      next: { revalidate: 300 }, // Revalidate every 5 minutes
-    });
+    // Fetch product data using server action
+    const result = await getProduct(id);
 
-    if (!response.ok) {
-      if (response.status === 404) {
+    if (!result.success) {
+      if (result.error === 'Product not found') {
         notFound();
       }
-      throw new Error(`Failed to fetch product: ${response.status}`);
+      throw new Error(result.error || 'Failed to fetch product');
     }
 
-    const product: ProductType = await response.json();
+    const product: ProductType = result.data!;
 
     return (
       <article className="grid">
@@ -55,18 +53,16 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const { id } = params;
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products/${id}`, {
-      cache: 'force-cache',
-    });
+    const result = await getProduct(id);
 
-    if (!response.ok) {
+    if (!result.success) {
       return {
         title: 'Producto no encontrado',
         description: 'El producto solicitado no fue encontrado.',
       };
     }
 
-    const product: ProductType = await response.json();
+    const product: ProductType = result.data!;
 
     return {
       title: `${product.title} - Catálogo de Productos`,
