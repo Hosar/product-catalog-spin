@@ -5,7 +5,6 @@ import { Column } from 'primereact/column';
 import { Paginator } from 'primereact/paginator';
 import { ProductFilters } from './components/ProductFilters';
 import { ProductSearch } from './components/ProductSearch';
-import { Chart } from 'primereact/chart';
 import {
   ProductImageTemplate,
   ProductTitleTemplate,
@@ -13,13 +12,13 @@ import {
   ProductCategoryTemplate,
   ProductRatingTemplate,
   ProductStockTemplate,
+  ProductChartTemplate,
 } from './components/templates';
-import { capitalize, countReviewRatings } from '@/utils/formatters';
-import type { Product, Review } from '@/types/product';
+import { capitalize } from '@/utils/formatters';
+import type { Product } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
 import { Category } from '@/types/category';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
-import { CHART_COLORS } from '@/utils/constants';
 
 interface ProductsPresenterProps {
   products: Product[];
@@ -32,30 +31,6 @@ interface ProductsPresenterProps {
   className?: string;
 }
 
-const chartBodyTemplate = (rowData: Product) => {
-  const reviews = countReviewRatings(rowData.reviews as Review[]);
-  const data = {
-    labels: ['1', '2', '3', '4', '5'],
-    datasets: [
-      {
-        data: reviews || [],
-        backgroundColor: CHART_COLORS,
-        hoverBackgroundColor: CHART_COLORS
-      }
-    ]
-  }
-  const options = {
-    plugins: {
-      legend: {
-        display: false
-      }
-    }
-  };
-
-  return (
-    <Chart type="bar" data={data} options={options} />
-  );
-};
 
 /**
  * Presenter component that handles only UI rendering and user interactions
@@ -164,6 +139,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   const categoryBodyTemplate = (product: Product) => <ProductCategoryTemplate product={product} />;
   const ratingBodyTemplate = (product: Product) => <ProductRatingTemplate product={product} />;
   const stockBodyTemplate = (product: Product) => <ProductStockTemplate product={product} />;
+  const chartBodyTemplate = (product: Product) => <ProductChartTemplate product={product} />;
 
   const brandBodyTemplate = (product: Product) => {
     return <span className="font-medium">{product.sku}</span>;

@@ -9,3 +9,4 @@ export { ProductPriceTemplate } from './ProductPriceTemplate';
 export { ProductCategoryTemplate } from './ProductCategoryTemplate';
 export { ProductRatingTemplate } from './ProductRatingTemplate';
 export { ProductStockTemplate } from './ProductStockTemplate';
+export { ProductChartTemplate } from './ProductChartTemplate';
