@@ -171,11 +171,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     return <span className="font-medium">{product.sku}</span>;
   };
 
-  // Handle product selection (for future functionality)
+  // Handle product selection - navigate to product details
   const handleProductSelect = useCallback((event: DataTableSelectEvent) => {
-    // TODO: Implement product detail view or modal
-    console.log('Product selected:', event.data);
-  }, []);
+    if (event.data && event.data.id) {
+      router.push(`/product/${event.data.id}`);
+    }
+  }, [router]);
 
   return (
     <main className={`grid ${className}`}>
