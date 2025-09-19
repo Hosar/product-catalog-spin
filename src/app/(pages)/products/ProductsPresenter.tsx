@@ -134,11 +134,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   const stockBodyTemplate = (product: Product) => <ProductStockTemplate product={product} />;
   const chartBodyTemplate = (product: Product) => <ProductChartTemplate product={product} />;
 
-  const brandBodyTemplate = (product: Product) => {
-    return <span className="font-medium">{product.sku}</span>;
-  };
-
-  // Handle product selection - navigate to product details
   const handleProductSelect = useCallback((event: DataTableSelectEvent) => {
     if (event.data && event.data.id) {
       router.push(`/product/${event.data.id}`);
