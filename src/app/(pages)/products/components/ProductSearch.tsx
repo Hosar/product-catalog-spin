@@ -53,12 +53,17 @@ export const ProductSearch: React.FC<ProductSearchProps> = ({
     const trimmedQuery = debouncedSearchQuery.trim();
     
     if (trimmedQuery !== currentSearchQuery) {
+      // Get current category from URL to include in search
+      const currentCategory = searchParams.get('category') || '';
+      
       updateUrlParams({
         q: trimmedQuery || null,
         skip: 0, // Reset to first page when searching
+        // Include category in search if it's selected
+        ...(currentCategory && { category: currentCategory }),
       });
     }
-  }, [debouncedSearchQuery, currentSearchQuery, updateUrlParams]);
+  }, [debouncedSearchQuery, currentSearchQuery, updateUrlParams, searchParams]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);

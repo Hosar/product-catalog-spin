@@ -26,8 +26,6 @@ interface ProductsPresenterProps {
   skip: number;
   limit: number;
   categories: Category[];
-  error: string | null;
-  onRefetch?: () => Promise<void>;
   className?: string;
 }
 
@@ -42,25 +40,18 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   skip: initialSkip,
   limit: initialLimit,
   categories: initialCategories,
-  error: initialError,
   className = ''
 }) => {
-  // Next.js URL hooks
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
-
-  // Local state for UI
-  const [loading, setLoading] = useState(false);
 
   // Get current URL parameters
   const currentSkip = parseInt(searchParams.get('skip') || initialSkip.toString());
   const currentLimit = parseInt(searchParams.get('limit') || initialLimit.toString());
   const currentCategory = searchParams.get('category') || '';
-  const currentSort = searchParams.get('sort') || 'title-asc';
   const currentSortField = searchParams.get('sortField') || '';
   const currentSortOrder = parseInt(searchParams.get('sortOrder') || '1') as 0 | 1 | -1;
-  const currentSearchQuery = searchParams.get('q') || '';
 
   // Use initial data or current URL state
   const products = initialProducts;
@@ -68,19 +59,20 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   const skip = currentSkip;
   const limit = currentLimit;
   const categories = initialCategories;
-  const error = initialError;
   const selectedCategory = currentCategory;
-  const sortBy = currentSort;
   const sortField = currentSortField;
   const sortOrder = currentSortOrder;
-  const searchQuery = currentSearchQuery;
 
+  console.log('initialCategories ....:', initialCategories);
+  console.log('currentCategory ....:', currentCategory);
   // Function to update URL parameters
   const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === '' || value === 0) {
+      console.log('key ....:', key);
+      console.log('value ....:', value);
+      if (!value) {
         params.delete(key);
       } else {
         params.set(key, value.toString());
@@ -93,13 +85,14 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   // Create category options for dropdown
   const categoryOptions = [
-    { label: 'Todas las categorías', value: '' },
+    { label: 'Todas las categorías', value: null },
     ...categories.map((category: Category) => ({
       label: capitalize(category.name),
       value: category.name
     }))
   ];
 
+  console.log('----> categoryOptions ....:', categoryOptions);
   // Handle pagination
   const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
     updateUrlParams({
@@ -110,8 +103,13 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   // Handle filter changes with pagination reset
   const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
+    console.log('handleCategoryChangeWithReset - e.value ....:', e.value);
+    let value = e.value;
+    if(typeof e.value === 'object' && e.value !== null) {
+      value = e.value?.value || null;
+    }
     updateUrlParams({
-      category: e.value,
+      category: value,
       skip: 0, // Reset to first page
     });
   }, [updateUrlParams]);

@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q');
     const limit = searchParams.get('limit');
     const skip = searchParams.get('skip');
+    const category = searchParams.get('category');
     
     if (!query) {
       return NextResponse.json(
@@ -53,6 +54,10 @@ export async function GET(request: NextRequest) {
       apiUrl.searchParams.set('skip', skip);
     }
     
+    if (category) {
+      apiUrl.searchParams.set('category', category);
+    }
+    
     const response = await fetch(apiUrl.toString());
     
     if (!response.ok) {
@@ -63,6 +68,7 @@ export async function GET(request: NextRequest) {
     
     logger.info({ 
       query, 
+      category: category || 'none',
       limit: limit || 'default', 
       skip: skip || 'default', 
       total: data.total 

@@ -30,12 +30,16 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   const pathname = usePathname();
   const router = useRouter();
 
+  console.log('selectedCategory ....:', selectedCategory);
+  console.log('ProductFilters - categoryOptions ....:', categoryOptions);
+
   // Function to update URL parameters
   const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
+    console.log('newParams ....:', newParams);
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === '' || value === 0) {
+      if (!value) {
         params.delete(key);
       } else {
         params.set(key, value.toString());
@@ -43,11 +47,13 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
     });
 
     const newUrl = params.toString() ? `?${params.toString()}` : '';
+    console.log('newUrl ....:', newUrl);
     router.replace(`${pathname}${newUrl}`, { scroll: false });
   }, [searchParams, pathname, router]);
 
   // Handle category change with URL update
   const handleCategoryChange = useCallback((e: { value: string }) => {
+    console.log('e.value ....:', e.value);
     updateUrlParams({
       category: e.value,
       skip: 0, // Reset to first page
