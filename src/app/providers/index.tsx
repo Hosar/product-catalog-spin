@@ -8,6 +8,8 @@ export function Providers({
   readonly children: React.ReactNode;
 }) {
   return (
-    <PrimeReactProvider>{children}</PrimeReactProvider>
+    <PrimeReactProvider>
+        {children}
+    </PrimeReactProvider>
   );
 }

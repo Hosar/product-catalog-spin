@@ -16,7 +16,7 @@ export const SORT_OPTIONS: SortOption[] = [
 
 // Chart colors for data visualization
 export const CHART_COLORS = [
-  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#0033cc',
   '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
 ] as const;
 

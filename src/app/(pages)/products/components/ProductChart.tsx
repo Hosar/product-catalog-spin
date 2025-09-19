@@ -30,12 +30,12 @@ export const ProductChart: React.FC<ProductChartProps> = ({
       if (!categoryPrices[product.category]) {
         categoryPrices[product.category] = [];
       }
-      categoryPrices[product.category].push(product.price);
+      categoryPrices[product.category]!.push(product.price);
     });
 
     const labels = Object.keys(categoryPrices);
     const data = labels.map(category => {
-      const prices = categoryPrices[category];
+      const prices = categoryPrices[category]!;
       return prices.reduce((sum, price) => sum + price, 0) / prices.length;
     });
 
@@ -85,22 +85,22 @@ export const ProductChart: React.FC<ProductChartProps> = ({
 
   return (
     <Card className={className}>
-      <div className="flex flex-column gap-3">
+      <section className="flex flex-column gap-3">
         <h2 
           className="text-xl font-semibold m-0" 
           aria-label="Gráfico de precios promedio por categoría"
         >
           Precio Promedio por Categoría
         </h2>
-        <div style={{ height: '300px' }}>
+        <figure style={{ height: '300px' }}>
           <Chart
             type="bar"
             data={chartData}
             options={chartOptions}
             aria-label="Gráfico de barras mostrando el precio promedio de cada categoría de productos"
           />
-        </div>
-      </div>
+        </figure>
+      </section>
     </Card>
   );
 };
