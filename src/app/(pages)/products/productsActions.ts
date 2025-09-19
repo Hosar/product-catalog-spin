@@ -1,10 +1,4 @@
-/**
- * Products Actions - Server Actions for product data operations
- * This file contains all data fetching logic for the products page
- */
-
 'use server';
-
 import { revalidatePath } from 'next/cache';
 import pino from 'pino';
 import type { Product } from '@/types/product';
@@ -14,13 +8,7 @@ const logger = pino({
   level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
 });
 
-// External API response interface
-interface DummyJsonResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
-}
+const baseUrl = process.env.DOMAIN || "http://localhost:3000";
 
 /**
  * Fetches all products from the external API
@@ -31,10 +19,12 @@ export async function getProducts(): Promise<{
   data?: Product[];
   error?: string;
 }> {
+  
   try {
     logger.info('Server Action: Fetching products from DummyJSON API');
-    
-    const response = await fetch('https://dummyjson.com/products', {
+    const productsUrl = `${baseUrl}/api/products`;
+    console.log('productsUrl ...:', productsUrl);
+    const response = await fetch(productsUrl, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'ProductCatalog/1.0',
@@ -51,17 +41,17 @@ export async function getProducts(): Promise<{
       return { success: false, error: errorMessage };
     }
     
-    const data: DummyJsonResponse = await response.json();
+    const products: Product[] = await response.json();
     
     // Validate response structure
-    if (!Array.isArray(data.products)) {
+    if (!Array.isArray(products)) {
       logger.error('Invalid response format from external API');
       return { success: false, error: 'Invalid response format from external API' };
     }
     
-    logger.info({ productCount: data.products.length }, 'Products fetched successfully via Server Action');
+    logger.info({ productCount: products.length }, 'Products fetched successfully via Server Action');
     
-    return { success: true, data: data.products };
+    return { success: true, data: products };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     logger.error({ error: errorMessage }, 'Error fetching products via Server Action');
@@ -81,8 +71,9 @@ export async function getCategories(): Promise<{
 }> {
   try {
     logger.info('Server Action: Fetching product categories from DummyJSON API');
-    
-    const response = await fetch('https://dummyjson.com/products/categories', {
+    const categoriesUrl = `${baseUrl}/api/products/categories`;
+    console.log('categoriesUrl ...:', categoriesUrl);
+    const response = await fetch(categoriesUrl, {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'ProductCatalog/1.0',

@@ -15,10 +15,11 @@ import { Chart } from 'primereact/chart';
 import { formatPrice, capitalize, truncateText } from '@/utils/formatters';
 import type { Product } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
+import { Category } from '@/types/category';
 
 interface ProductsPresenterProps {
   products: Product[];
-  categories: string[];
+  categories: Category[];
   loading: boolean;
   error: string | null;
   onRefetch?: () => Promise<void>;
@@ -282,6 +283,8 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
             dataKey="id"
             emptyMessage="No se encontraron productos"
             className="p-datatable-sm"
+            rows={10} 
+            rowsPerPageOptions={[5, 10, 25, 50]} 
             aria-label="Tabla de productos"
           >
             <Column
@@ -296,7 +299,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
               header="Producto"
               body={titleBodyTemplate}
               sortable
-              style={{ minWidth: '250px' }}
+              style={{ minWidth: '150px' }}
             />
             <Column
               field="price"
