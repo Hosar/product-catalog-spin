@@ -9,7 +9,13 @@ const logger = pino({
   level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
 });
 
-const baseUrl = process.env.DOMAIN || "http://localhost:3000";
+function getBaseUrl() {
+  const vercel = process.env.VERCEL_URL; // e.g. my-app-abc123.vercel.app
+  if (vercel) return `https://${vercel}`;
+  return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+}
+
+const baseUrl = getBaseUrl();
 
 /**
  * Fetches all products from the external API
