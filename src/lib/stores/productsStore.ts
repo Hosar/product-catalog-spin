@@ -19,6 +19,10 @@ interface ProductsState {
   selectedCategory: string;
   sortBy: string;
   
+  // DataTable sorting state
+  sortField: string;
+  sortOrder: 0 | 1 | -1 | null | undefined;
+  
   // Initialization state
   isInitialized: boolean;
   
@@ -38,6 +42,11 @@ interface ProductsState {
   setSelectedCategory: (category: string) => void;
   setSortBy: (sortBy: string) => void;
   setFilters: (category: string, sortBy: string) => void;
+  
+  // DataTable sorting actions
+  setSortField: (sortField: string) => void;
+  setSortOrder: (sortOrder: 0 | 1 | -1 | null | undefined) => void;
+  setDataTableSort: (sortField: string, sortOrder: 0 | 1 | -1 | null | undefined) => void;
   
   // Combined actions
   resetFilters: () => void;
@@ -75,6 +84,8 @@ export const useProductsStore = create<ProductsState>()(
         limit: DEFAULT_LIMIT,
         selectedCategory: '',
         sortBy: DEFAULT_SORT,
+        sortField: '',
+        sortOrder: 1,
         isInitialized: false,
         
         // Data setters
@@ -94,10 +105,17 @@ export const useProductsStore = create<ProductsState>()(
         setSortBy: (sortBy) => set({ sortBy }),
         setFilters: (selectedCategory, sortBy) => set({ selectedCategory, sortBy }),
         
+        // DataTable sorting setters
+        setSortField: (sortField) => set({ sortField }),
+        setSortOrder: (sortOrder) => set({ sortOrder }),
+        setDataTableSort: (sortField, sortOrder) => set({ sortField, sortOrder }),
+        
         // Reset actions
         resetFilters: () => set({ 
           selectedCategory: '', 
-          sortBy: DEFAULT_SORT 
+          sortBy: DEFAULT_SORT,
+          sortField: '',
+          sortOrder: 1,
         }),
         resetPagination: () => set({ 
           skip: DEFAULT_SKIP, 
@@ -113,6 +131,8 @@ export const useProductsStore = create<ProductsState>()(
           limit: DEFAULT_LIMIT,
           selectedCategory: '',
           sortBy: DEFAULT_SORT,
+          sortField: '',
+          sortOrder: 1,
           isInitialized: false,
         }),
         
@@ -195,6 +215,8 @@ export const useProductsStore = create<ProductsState>()(
           limit: state.limit,
           selectedCategory: state.selectedCategory,
           sortBy: state.sortBy,
+          sortField: state.sortField,
+          sortOrder: state.sortOrder,
         }),
       }
     ),

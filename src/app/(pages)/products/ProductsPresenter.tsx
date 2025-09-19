@@ -80,21 +80,21 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     error,
     selectedCategory,
     sortBy,
+    sortField,
+    sortOrder,
     isInitialized,
     setSkip,
     setLimit,
     setSelectedCategory,
     setSortBy,
+    setSortField,
+    setSortOrder,
     resetPagination,
     initializeWithData,
   } = useProductsStore();
 
   // URL synchronization
   useUrlSync();
-
-  // DataTable sorting state
-  const [sortField, setSortField] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<0 | 1 | -1 | null | undefined>(1);
 
   // Initialize store with initial data (only once)
   useEffect(() => {
@@ -157,7 +157,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     setSortOrder(event.sortOrder);
     // Reset to first page when sorting
     resetPagination();
-  }, [resetPagination]);
+  }, [setSortField, setSortOrder, resetPagination]);
 
   // Column templates
   const imageBodyTemplate = (product: Product) => {

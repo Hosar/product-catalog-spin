@@ -20,11 +20,15 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     limit,
     selectedCategory,
     sortBy,
+    sortField,
+    sortOrder,
     isInitialized,
     setSkip,
     setLimit,
     setSelectedCategory,
     setSortBy,
+    setSortField,
+    setSortOrder,
     fetchProducts,
   } = useProductsStore();
 
@@ -39,10 +43,12 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     if (limit !== 10) params.set('limit', limit.toString());
     if (selectedCategory) params.set('category', selectedCategory);
     if (sortBy !== 'title-asc') params.set('sort', sortBy);
+    if (sortField) params.set('sortField', sortField);
+    if (sortOrder !== 1) params.set('sortOrder', sortOrder?.toString() || '1');
     
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     router.replace(newUrl, { scroll: false });
-  }, [skip, limit, selectedCategory, sortBy, router, isInitialized]);
+  }, [skip, limit, selectedCategory, sortBy, sortField, sortOrder, router, isInitialized]);
 
   // Debounced URL update
   useEffect(() => {
@@ -56,9 +62,11 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
     const urlLimit = searchParams.get('limit');
     const urlCategory = searchParams.get('category');
     const urlSort = searchParams.get('sort');
+    const urlSortField = searchParams.get('sortField');
+    const urlSortOrder = searchParams.get('sortOrder');
 
     // Only initialize if we have URL parameters and store is not initialized yet
-    if (!isInitialized && (urlSkip || urlLimit || urlCategory || urlSort)) {
+    if (!isInitialized && (urlSkip || urlLimit || urlCategory || urlSort || urlSortField || urlSortOrder)) {
       let hasChanges = false;
 
       if (urlSkip && parseInt(urlSkip) !== skip) {
@@ -78,6 +86,16 @@ export const useUrlSync = (options: UrlSyncOptions = {}) => {
 
       if (urlSort && urlSort !== sortBy) {
         setSortBy(urlSort);
+        hasChanges = true;
+      }
+
+      if (urlSortField && urlSortField !== sortField) {
+        setSortField(urlSortField);
+        hasChanges = true;
+      }
+
+      if (urlSortOrder && parseInt(urlSortOrder) !== sortOrder) {
+        setSortOrder(parseInt(urlSortOrder) as 0 | 1 | -1);
         hasChanges = true;
       }
 
