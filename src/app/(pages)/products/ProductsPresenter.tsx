@@ -116,13 +116,6 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     });
   }, [updateUrlParams]);
 
-  const handleSortChangeWithReset = useCallback((e: { value: string }) => {
-    updateUrlParams({
-      sort: e.value,
-      skip: 0, // Reset to first page
-    });
-  }, [updateUrlParams]);
-
   // Handle DataTable sorting
   const onSort = useCallback((event: DataTableStateEvent) => {
     updateUrlParams({
