@@ -1,0 +1,268 @@
+---
+globs: "**/*.tsx,**/*.ts"
+description: "Performance Optimization Guidelines"
+---
+
+# Performance Optimization Guidelines
+
+## React Performance Patterns
+
+### State Management Optimization
+Based on [src/app/(pages)/products/products.tsx](mdc:src/app/(pages)/products/products.tsx):
+
+```typescript
+// ✅ Good - Memoized expensive calculations
+const filteredAndSortedProducts = useMemo(() => {
+  let filtered = products;
+  
+  if (selectedCategory) {
+    filtered = filtered.filter(product => product.category === selectedCategory);
+  }
+  
+  // Sort logic...
+  return filtered;
+}, [products, selectedCategory, sortBy]);
+
+// ✅ Good - Memoized pagination
+const paginatedProducts = useMemo(() => {
+  const start = first;
+  const end = start + rows;
+  return filteredAndSortedProducts.slice(start, end);
+}, [filteredAndSortedProducts, first, rows]);
+```
+
+### Component Optimization
+```typescript
+// ✅ Good - Memoized chart data
+const chartData = useMemo(() => {
+  const categoryPrices: { [key: string]: number[] } = {};
+  
+  products.forEach(product => {
+    if (!categoryPrices[product.category]) {
+      categoryPrices[product.category] = [];
+    }
+    categoryPrices[product.category].push(product.price);
+  });
+  
+  // Calculate averages...
+  return { labels, datasets: [...] };
+}, [products]);
+```
+
+## Data Fetching Optimization
+
+### Parallel API Calls
+```typescript
+// ✅ Good - Parallel data fetching
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/products/categories')
+      ]);
+      
+      // Process responses...
+    } catch (err) {
+      // Error handling...
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  fetchData();
+}, []);
+```
+
+### Pagination Strategy
+```typescript
+// ✅ Good - Client-side pagination for small datasets
+const [first, setFirst] = useState(0);
+const [rows] = useState(12); // Products per page
+
+const paginatedProducts = useMemo(() => {
+  const start = first;
+  const end = start + rows;
+  return filteredAndSortedProducts.slice(start, end);
+}, [filteredAndSortedProducts, first, rows]);
+```
+
+## Image Optimization
+
+### Next.js Image Component
+```typescript
+// ✅ Good - Optimized image loading
+<Image
+  src={product.thumbnail}
+  alt={product.title}
+  width="100%"
+  height="200px"
+  className="border-round"
+  preview
+  priority={false} // Only true for above-the-fold images
+/>
+```
+
+### PrimeReact Image Component
+```typescript
+// ✅ Good - PrimeReact image with preview
+<Image
+  src={product.thumbnail}
+  alt={product.title}
+  width="100%"
+  height="200px"
+  className="border-round"
+  preview
+  aria-label={`Imagen del producto ${product.title}`}
+/>
+```
+
+## Loading States
+
+### Skeleton Loading
+```typescript
+// ✅ Good - Comprehensive loading skeleton
+const ProductSkeleton = () => (
+  <Card className="h-full">
+    <div className="flex flex-column gap-3">
+      <Skeleton width="100%" height="200px" />
+      <Skeleton width="80%" height="1.5rem" />
+      <Skeleton width="60%" height="1rem" />
+      <Skeleton width="40%" height="1rem" />
+      <Skeleton width="100%" height="2rem" />
+    </div>
+  </Card>
+);
+```
+
+### Progressive Loading
+```typescript
+// ✅ Good - Show loading state while fetching
+if (loading) {
+  return (
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex flex-column gap-4">
+        {/* Loading skeletons */}
+        <div className="grid">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <div key={index} className="col-12 md:col-6 lg:col-4 xl:col-3">
+              <ProductSkeleton />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+## Chart Performance
+
+### Chart.js Optimization
+```typescript
+// ✅ Good - Optimized chart configuration
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom' as const,
+      labels: {
+        usePointStyle: true,
+        padding: 20
+      }
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        callback: function(value: any) {
+          return `$${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+        }
+      }
+    }
+  }
+};
+```
+
+## Bundle Optimization
+
+### Dynamic Imports
+```typescript
+// ✅ Good - Code splitting for heavy components
+const HeavyChart = dynamic(() => import('./HeavyChart'), {
+  loading: () => <Skeleton width="100%" height="300px" />,
+  ssr: false
+});
+```
+
+### Tree Shaking
+```typescript
+// ✅ Good - Import only what you need
+import { Card } from 'primereact/card';
+import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
+
+// ❌ Avoid - Importing entire library
+import * as PrimeReact from 'primereact';
+```
+
+## Memory Management
+
+### Event Handler Optimization
+```typescript
+// ✅ Good - Stable event handlers
+const handleCategoryChange = useCallback((e: any) => {
+  setSelectedCategory(e.value);
+  setFirst(0);
+  setCurrentPage(0);
+}, []);
+
+const handleSortChange = useCallback((e: any) => {
+  setSortBy(e.value);
+  setFirst(0);
+  setCurrentPage(0);
+}, []);
+```
+
+### Cleanup
+```typescript
+// ✅ Good - Proper cleanup in useEffect
+useEffect(() => {
+  const controller = new AbortController();
+  
+  const fetchData = async () => {
+    try {
+      const response = await fetch('/api/products', {
+        signal: controller.signal
+      });
+      // Process response...
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        // Handle error...
+      }
+    }
+  };
+  
+  fetchData();
+  
+  return () => controller.abort();
+}, []);
+```
+
+## Performance Monitoring
+
+### Key Metrics to Track
+- **First Contentful Paint (FCP)**
+- **Largest Contentful Paint (LCP)**
+- **Cumulative Layout Shift (CLS)**
+- **Time to Interactive (TTI)**
+
+### Performance Budgets
+- **Bundle size**: Keep under 250KB gzipped
+- **Image optimization**: Use WebP format when possible
+- **API response time**: Under 200ms for cached responses
+- **Render time**: Under 16ms for smooth 60fps

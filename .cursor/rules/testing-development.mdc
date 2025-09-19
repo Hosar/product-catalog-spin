@@ -1,0 +1,191 @@
+---
+globs: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts"
+description: "Testing and Development Workflow Guidelines"
+---
+
+# Testing and Development Workflow
+
+## Testing Strategy
+
+### Unit Testing
+- **Test business logic** in utility functions and data transformations
+- **Test component behavior** with React Testing Library
+- **Mock external API calls** using MSW (Mock Service Worker)
+- **Test error handling** and edge cases
+
+### Integration Testing
+- **Test API routes** with proper request/response validation
+- **Test component integration** with real data flow
+- **Test user interactions** and state changes
+
+### End-to-End Testing
+- **Test critical user flows** (product browsing, filtering, pagination)
+- **Test responsive design** across different screen sizes
+- **Test accessibility** with screen readers and keyboard navigation
+
+## Development Workflow
+
+### Code Quality Standards
+```typescript
+// ✅ Good - Comprehensive error handling
+const fetchProducts = async (): Promise<Product[]> => {
+  try {
+    const response = await fetch('/api/products');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    logger.error({ error }, 'Failed to fetch products');
+    throw new Error('Error al cargar los productos');
+  }
+};
+```
+
+### Git Workflow
+- **Conventional Commits**: Use `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`
+- **Small PRs**: Keep changes focused and under 300 LOC
+- **Descriptive commit messages**: Explain what and why, not how
+- **Branch naming**: Use `feature/`, `fix/`, `chore/` prefixes
+
+### Code Review Checklist
+- [ ] **TypeScript**: No `any` types, proper interfaces
+- [ ] **Accessibility**: ARIA labels, keyboard navigation
+- [ ] **Performance**: Memoization, proper loading states
+- [ ] **Error Handling**: Comprehensive try-catch blocks
+- [ ] **Styling**: Consistent Tailwind + PrimeReact usage
+- [ ] **Testing**: Unit tests for new functionality
+
+## Error Handling Patterns
+
+### Client-Side Error Handling
+```typescript
+// ✅ Good - User-friendly error messages
+if (error) {
+  return (
+    <div className="container mx-auto px-4 py-6">
+      <Message
+        severity="error"
+        text={error}
+        aria-label={`Error: ${error}`}
+      />
+    </div>
+  );
+}
+```
+
+### Server-Side Error Handling
+```typescript
+// ✅ Good - Structured error logging
+export async function GET() {
+  try {
+    const response = await fetch('https://dummyjson.com/products');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return NextResponse.json(data.products);
+  } catch (error) {
+    logger.error({ error }, 'Error fetching products from DummyJSON API');
+    return NextResponse.json(
+      { error: 'Error al cargar los productos' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Performance Monitoring
+
+### Key Metrics to Track
+- **Bundle size**: Monitor with `npm run build`
+- **API response times**: Log in route handlers
+- **Component render times**: Use React DevTools Profiler
+- **User interactions**: Track with analytics
+
+### Performance Budgets
+- **Initial bundle**: < 250KB gzipped
+- **API response**: < 200ms for cached data
+- **Image loading**: < 1s for product thumbnails
+- **Page load**: < 3s for initial render
+
+## Accessibility Testing
+
+### Manual Testing
+- **Keyboard navigation**: Tab through all interactive elements
+- **Screen reader**: Test with NVDA, JAWS, or VoiceOver
+- **Color contrast**: Ensure WCAG AA compliance
+- **Focus indicators**: Visible focus states for all interactive elements
+
+### Automated Testing
+```typescript
+// ✅ Good - Accessibility testing with jest-axe
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+test('ProductCard should not have accessibility violations', async () => {
+  const { container } = render(<ProductCard product={mockProduct} />);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+## Development Environment
+
+### Required Tools
+- **Node.js**: Version 18+ for Next.js 14
+- **Package Manager**: npm or yarn
+- **IDE**: VS Code with TypeScript and React extensions
+- **Browser**: Chrome DevTools for debugging
+
+### Environment Variables
+```bash
+# .env.local
+NEXT_PUBLIC_API_URL=https://dummyjson.com
+NODE_ENV=development
+```
+
+### Scripts
+```json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  }
+}
+```
+
+## Documentation Standards
+
+### Code Documentation
+- **JSDoc comments** for complex functions
+- **README updates** for new features
+- **API documentation** for route handlers
+- **Component documentation** for reusable components
+
+### Example Documentation
+```typescript
+/**
+ * Formats a price value according to Mexican locale standards
+ * @param price - The numeric price value to format
+ * @returns Formatted price string with currency symbol
+ * @example
+ * formatPrice(29.99) // Returns "$29.99"
+ */
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  }).format(price);
+};
+```

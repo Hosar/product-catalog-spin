@@ -1,0 +1,41 @@
+---
+alwaysApply: true
+description: "Product Catalog Architecture and Project Structure Guidelines"
+---
+
+# Product Catalog Architecture
+
+## Project Structure
+This is a Next.js 14 product catalog application with the following key structure:
+- **App Router**: Uses `src/app/` directory structure
+- **API Routes**: Located in `src/app/api/` for backend functionality
+- **Pages**: Located in `src/app/(pages)/` for route groups
+- **Providers**: Located in `src/app/providers/` for React context providers
+
+## Key Files and Their Purpose
+- [src/app/layout.tsx](mdc:src/app/layout.tsx) - Root layout with PrimeReact theme setup
+- [src/app/page.tsx](mdc:src/app/page.tsx) - Home page with navigation to products
+- [src/app/(pages)/products/products.tsx](mdc:src/app/(pages)/products/products.tsx) - Main products catalog page
+- [src/app/providers/index.tsx](mdc:src/app/providers/index.tsx) - PrimeReact provider setup
+- [src/app/api/products/route.ts](mdc:src/app/api/products/route.ts) - Products API endpoint
+- [src/app/api/products/categories/route.ts](mdc:src/app/api/products/categories/route.ts) - Categories API endpoint
+
+## Architecture Principles
+- **Server-First**: Prefer Server Components for data fetching and initial renders
+- **Client Components**: Only use `'use client'` when interactivity is required (forms, state management, event handlers)
+- **API Integration**: External API calls happen in route handlers, not in client components
+- **Type Safety**: All API responses and component props are properly typed
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Performance**: Implement pagination, filtering, and sorting for large datasets
+
+## Data Flow
+1. **Server Components** fetch data from API routes
+2. **API Routes** handle external API calls (DummyJSON) with proper error handling
+3. **Client Components** handle user interactions and state management
+4. **PrimeReact Components** provide consistent UI with built-in accessibility
+
+## External Dependencies
+- **DummyJSON API**: Primary data source for products and categories
+- **PrimeReact**: UI component library with built-in accessibility
+- **Tailwind CSS**: Utility-first CSS framework for styling
+- **Pino**: Structured logging for server-side operations

@@ -1,124 +1,85 @@
 ---
-description:
-  # Architecture & Code Quality
-  - "Prefer simple, composable modules over large files. SRP: one responsibility per file."
-  - "Use TypeScript everywhere. Enable 'strict' and 'noUncheckedIndexedAccess'."
-  - "Follow clean architecture boundaries: UI (app/*), domain (lib/domain/*), data (lib/data/*)."
-  - "Never leak server-only code into the client. Anything importing 'fs', 'crypto', or server SDKs must be server-only."
-  - "Favor pure functions; avoid hidden state and side effects."
-  - "Public APIs are small and explicit. Export only what is needed."
-
-  # Next.js Conventions (App Router)
-  - "Use App Router (app/*). Prefer Server Components by default; opt into Client Components only when needed."
-  - "Use Route Handlers (app/api/**/route.ts) for API. Validate inputs with Zod and return typed responses."
-  - "Use Server Actions for form mutations when appropriate; keep them small and validated."
-  - "Use caching correctly: 'revalidate' for ISR, 'cache: force-cache' for static, 'no-store' for dynamic. Document choice."
-  - "Co-locate loading.tsx, error.tsx, and not-found.tsx for routes; provide graceful UX."
-  - "Prefer Edge runtime for latency-sensitive endpoints when compatible; otherwise use Node."
-
-  # React & UI
-  - "Keep components small (<150 LOC). Extract hooks and subcomponents as soon as they grow."
-  - "Client components: 'use client' at top. Only when interactivity is required."
-  - "Use React Server Components for data fetching when possible; avoid client-side fetch for initial render."
-  - "Use React Hook Form + Zod for forms; keep schema next to the form."
-  - "Accessibility first: semantic HTML, ARIA where needed, focus states, labels for inputs."
-  - "Styling via Tailwind CSS; avoid deep custom CSS unless necessary. Use design tokens and utility classes."
-  - "Never inline magic numbers for spacing/colors—use Tailwind scale."
-  - "Use PrimeReact components for UI instead of raw HTML where a component exists (Button, InputText, Dropdown, DataTable, Dialog, Toast, etc.)."
-  - "Do not mix component libraries (no Material UI, Chakra, etc.); stick to PrimeReact + Tailwind for layout/utility classes."
-  - "Always import only the components you need from 'primereact/{ComponentName}' to avoid bloating bundles."
-  - "Apply Tailwind utility classes for spacing/layout; use PrimeReact only for actual widgets/components."
-  - "Use PrimeFlex (from PrimeReact ecosystem) for grid/flex layouts when it fits better than Tailwind."
-  - "Ensure accessibility: use PrimeReact's built-in ARIA support and augment with extra attributes if needed."
-  - "Use PrimeReact themes (saga, vela, aria, etc.) configured in globals.css; do not hand-roll theme overrides unless documented."
-  - "Prefer controlled components with React state or React Hook Form integration (PrimeReact supports Controller)."
-
-  # Data, State & Performance
-  - "Prefer server state over client state. Client state only for UI state."
-  - "Use React Query *only* when you genuinely need client-side caching/invalidation."
-  - "Always debounce/throttle expensive client events."
-  - "Code-split wisely with dynamic() for heavy client components."
-  - "Measure performance (LCP/CLS/TTI) and annotate trade-offs in PRs."
-  - "Image optimization: next/image with width/height, priority only above the fold."
-
-  # Security & Reliability
-  - "Validate and sanitize all external input with Zod (schemas in lib/validation/*)."
-  - "Use secure headers with next-safe-middleware or custom middleware. Deny by default."
-  - "Never log secrets. Keep secrets only in env vars; never commit .env.*"
-  - "Use CSRF protection for state-changing requests (if not using Server Actions)."
-  - "Check auth/permissions at the boundary (middleware or server action) not deep inside UI."
-
-  # Testing Strategy
-  - "Adopt a testing pyramid: unit > integration > e2e."
-  - "Unit/Integration: Vitest or Jest + React Testing Library; test behaviors, not implementation details."
-  - "Mock network with MSW for tests and Storybook."
-  - "E2E: Playwright with a minimal happy-path suite per critical flow (auth, checkout, CRUD)."
-  - "Maintain fast feedback: unit tests < 2s per package; e2e runs in CI only or nightly."
-  - "Coverage thresholds: 80% statements/branches for lib code; components measured by key paths."
-
-  # DX, Linting & Formatting
-  - "Use ESLint with next/core-web-vitals, @typescript-eslint, jsx-a11y, and import/order. No warnings in CI."
-  - "Prettier required; no custom style debates—format on commit."
-  - "Organize imports: external, internal (absolute @/*), relative. No deep relative paths like ../../.."
-  - "Use path aliases '@/*' in tsconfig; no brittle relative imports."
-
-  # Git, CI & Review
-  - "Conventional Commits (feat:, fix:, chore:, refactor:, test:, docs:)."
-  - "Every PR must: pass typecheck, lint, unit tests, and build. Block merge on failures."
-  - "Small PRs (<300 LOC diff preferred). Include before/after notes for UX or perf-relevant changes."
-  - "Automate with GitHub Actions: typecheck, lint, test, build, and (optionally) preview deploy."
-
-  # Observability & Errors
-  - "Centralize error handling. Convert unknown errors to typed domain errors."
-  - "Use a logger on the server (pino/console structured) with levels; avoid noisy logs."
-  - "Capture exceptions to an error tracker (Sentry or similar) server-side; scrub PII."
-
-  # Documentation & Examples
-  - "README explains run, test, build, env, and deploy."
-  - "Each significant module exposes a short 'How to use' code snippet."
-  - "For complex decisions (auth, caching, ISR), add ADRs (docs/adr-*.md)."
+description: "Keep clean con in NextJs project"
 globs: ["app/**/page.tsx", "app/**/layout.tsx", "app/**/template.tsx"]
-    rules:
-      - "Prefer Server Components; do not import client-only libs here."
-      - "If this file is a Client Component, justify why in a top comment."
-      - "Co-locate loading.tsx and error.tsx when route fetches data."
-globs: ["app/api/**/route.ts", "lib/server/**.ts"]
-    rules:
-      - "Validate request with Zod; narrow types before use."
-      - "Return typed Response with proper status codes; no any."
-      - "No business logic in route handlers—delegate to lib/domain/* services."
-      - "Use async/await with try/catch; map errors to 4xx/5xx consistently."
-globs: ["lib/domain/**.ts"]
-    rules:
-      - "Pure, framework-agnostic domain logic. No Next.js/React imports."
-      - "100% unit test coverage preferred for critical domain modules."
-globs: ["components/**/**.tsx"]
-    rules:
-      - "Keep components presentational; move data fetching to parent server components."
-      - "Write basic unit tests for complex UI logic with React Testing Library."
-      - "Ensure accessibility (labels, roles, keyboard paths)."
-      - "Default to PrimeReact components over raw HTML inputs/buttons."
-      - "Integrate forms with React Hook Form + PrimeReact controllers (e.g., Controller with InputText, Dropdown)."
-      - "For tables/grids, use PrimeReact DataTable with paginator/sorting/filtering when requirements match."
-      - "For modals, use PrimeReact Dialog; handle open/close state in parent."
-      - "Use PrimeReact Toast for notifications; no custom alert divs."
-globs: ["lib/validation/**.ts"]
-    rules:
-      - "Zod schemas exported with inferred types (z.infer)."
-      - "Schema lives next to its consumer (form/server action)."
-globs: ["e2e/**.spec.ts"]
-    rules:
-      - "Playwright tests: stable selectors (data-testid), no visual flakiness."
-      - "Keep e2e minimal: test critical flows, not every component."
-globs: ["**/*.test.ts", "**/*.test.tsx"]
-    rules:
-      - "Do not mock React; use MSW for network."
-      - "Test observable behavior and contracts; avoid snapshotting entire trees."
-globs: ["**/*.ts", "**/*.tsx"]
-    rules:
-      - "No 'any'. Use unknown + refinement if needed."
-      - "Prefer readonly, const assertions, and exact object shapes."
-      - "Type errors must be fixed, not suppressed."
-
 alwaysApply: true
 ---
+# Clean code Guidelines
+
+## Architecture & Code Quality
+  - **Prefer simple, composable modules over large files. SRP: one responsibility per file**
+  - **Use TypeScript everywhere. Enable 'strict' and 'noUncheckedIndexedAccess'**
+  - **Follow clean architecture boundaries: UI (app/*), domain (lib/domain/*), data (lib/data/*)**
+  - **Never leak server-only code into the client. Anything importing 'fs', 'crypto', or server SDKs must be server-only**
+  - **Favor pure functions; avoid hidden state and side effects**
+  - **Public APIs are small and explicit. Export only what is needed**
+
+## Next.js Conventions (App Router)
+  - **Use App Router (app/*). Prefer Server Components by default; opt into Client Components only when needed**
+  - **Use Route Handlers `(app/api/**/route.ts)` for API. Validate inputs with Zod and return typed responses**
+  - **Use Server Actions for form mutations when appropriate; keep them small and validated**
+  - **Use caching correctly: 'revalidate' for ISR, 'cache: force-cache' for static, 'no-store' for dynamic. Document choice**
+  - **Co-locate loading.tsx, error.tsx, and not-found.tsx for routes; provide graceful UX**
+  - **Prefer Edge runtime for latency-sensitive endpoints when compatible; otherwise use Node**
+
+## React & UI
+  - **Keep components small (<150 LOC). Extract hooks and subcomponents as soon as they grow**
+  - **Client components: 'use client' at top. Only when interactivity is required.**
+  - **Use React Server Components for data fetching when possible; avoid client-side fetch for initial render.**
+  - **Use React Hook Form + Zod for forms; keep schema next to the form.**
+  - **Accessibility first: semantic HTML, ARIA where needed, focus states, labels for inputs.**
+  - **Styling via Tailwind CSS; avoid deep custom CSS unless necessary. Use design tokens and utility classes.**
+  - **Never inline magic numbers for spacing/colors—use Tailwind scale.**
+  - **Use PrimeReact components for UI instead of raw HTML where a component exists (Button, InputText, Dropdown, DataTable, Dialog, Toast, etc.).**
+  - **Do not mix component libraries (no Material UI, Chakra, etc.); stick to PrimeReact + Tailwind for layout/utility classes.**
+  - **Always import only the components you need from 'primereact/{ComponentName}' to avoid bloating bundles.**
+  - **Apply Tailwind utility classes for spacing/layout; use PrimeReact only for actual widgets/components.**
+  - **Use PrimeFlex (from PrimeReact ecosystem) for grid/flex layouts when it fits better than Tailwind.**
+  - **Ensure accessibility: use PrimeReact's built-in ARIA support and augment with extra attributes if needed.**
+  - **Use PrimeReact themes (saga, vela, aria, etc.) configured in globals.css; do not hand-roll theme overrides unless documented.**
+  - **Prefer controlled components with React state or React Hook Form integration (PrimeReact supports Controller).**
+
+## Data, State & Performance
+  - **Prefer server state over client state. Client state only for UI state.**
+  - **Use React Query *only* when you genuinely need client-side caching/invalidation.**
+  - **Always debounce/throttle expensive client events.**
+  - **Code-split wisely with dynamic() for heavy client components.**
+  - **Measure performance (LCP/CLS/TTI) and annotate trade-offs in PRs.**
+  - **Image optimization: next/image with width/height, priority only above the fold.**
+
+## Security & Reliability
+  - **Validate and sanitize all external input with Zod (schemas in lib/validation/*).**
+  - **Use secure headers with next-safe-middleware or custom middleware. Deny by default.**
+  - **Never log secrets. Keep secrets only in env vars; never commit .env.***
+  - **Use CSRF protection for state-changing requests (if not using Server Actions).**
+  - **Check auth/permissions at the boundary (middleware or server action) not deep inside UI.**
+
+## Testing Strategy
+  - **Adopt a testing pyramid: unit > integration > e2e.**
+  - **Unit/Integration: Vitest or Jest + React Testing Library; test behaviors, not implementation details.**
+  - **Mock network with MSW for tests and Storybook.**
+  - **E2E: Playwright with a minimal happy-path suite per critical flow (auth, checkout, CRUD).**
+  - **Maintain fast feedback: unit tests < 2s per package; e2e runs in CI only or nightly.**
+  - **Coverage thresholds: 80% statements/branches for lib code; components measured by key paths.**
+
+## DX, Linting & Formatting
+  - **Use ESLint with next/core-web-vitals, @typescript-eslint, jsx-a11y, and import/order. No warnings in CI.**
+  - **Prettier required; no custom style debates—format on commit.**
+  - **Organize imports: external, internal (absolute @/*), relative. No deep relative paths like `../../..`**
+  - **Use path aliases '@/*' in tsconfig; no brittle relative imports.**
+
+## Git, CI & Review
+  - **Conventional Commits (feat:, fix:, chore:, refactor:, test:, docs:).**
+  - **Every PR must: pass typecheck, lint, unit tests, and build. Block merge on failures.**
+  - **Small PRs (<300 LOC diff preferred). Include before/after notes for UX or perf-relevant changes.**
+  - **Automate with GitHub Actions: typecheck, lint, test, build, and (optionally) preview deploy.**
+
+## Observability & Errors
+  - **Centralize error handling. Convert unknown errors to typed domain errors.**
+  - **Use a logger on the server (pino/console structured) with levels; avoid noisy logs.**
+  - **Capture exceptions to an error tracker (Sentry, Pino or similar) server-side; scrub PII.**
+
+## Documentation & Examples
+  - **README explains run, test, build, env, and deploy.**
+  - **Each significant module exposes a short 'How to use' code snippet.**
+  - **For complex decisions (auth, caching, ISR), add ADRs (docs/adr-*.md).**
+

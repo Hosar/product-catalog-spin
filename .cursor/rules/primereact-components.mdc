@@ -1,0 +1,88 @@
+---
+globs: "**/*.tsx,**/*.ts"
+description: "PrimeReact Component Usage Guidelines"
+---
+
+# PrimeReact Component Guidelines
+
+## Component Library Standards
+This project uses **PrimeReact** as the primary UI component library. Follow these guidelines:
+
+### Import Strategy
+```typescript
+// ✅ Correct - Import specific components
+import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
+import { Card } from 'primereact/card';
+
+// ❌ Avoid - Importing entire library
+import * as PrimeReact from 'primereact';
+```
+
+### Required Components for Product Catalog
+Based on [src/app/(pages)/products/products.tsx](mdc:src/app/(pages)/products/products.tsx), use these PrimeReact components:
+
+#### Data Display
+- **Card**: For product cards and content containers
+- **Image**: For product images with preview functionality
+- **Tag**: For categories, brands, and discount badges
+- **Rating**: For product ratings display
+- **Skeleton**: For loading states
+
+#### Forms and Inputs
+- **Dropdown**: For category filters and sorting options
+- **Button**: For all interactive buttons
+- **InputText**: For search and form inputs
+
+#### Data Management
+- **Paginator**: For pagination controls
+- **DataTable**: For tabular data display (if needed)
+
+#### Feedback
+- **Message**: For error and success messages
+- **Toast**: For notifications (when implemented)
+
+#### Charts
+- **Chart**: For data visualization (price analysis)
+
+### Styling Integration
+- **PrimeFlex**: Use for grid layouts (`grid`, `col-*`, `flex`, `gap-*`)
+- **Tailwind**: Use for utility classes (spacing, colors, responsive design)
+- **PrimeReact Themes**: Configured in [src/app/layout.tsx](mdc:src/app/layout.tsx)
+
+### Accessibility Requirements
+- Always provide `aria-label` attributes for screen readers
+- Use semantic HTML structure
+- Ensure keyboard navigation works
+- Test with screen readers
+
+### Example Implementation
+```typescript
+// Product card with proper accessibility
+<Card 
+  className="h-full cursor-pointer hover:shadow-4 transition-all transition-duration-200"
+  aria-label={`Producto: ${product.title}`}
+>
+  <Image
+    src={product.thumbnail}
+    alt={product.title}
+    width="100%"
+    height="200px"
+    className="border-round"
+    preview
+    aria-label={`Imagen del producto ${product.title}`}
+  />
+  <Tag
+    value={`-${product.discountPercentage}%`}
+    severity="success"
+    className="absolute top-0 right-0 m-2"
+    aria-label={`Descuento del ${product.discountPercentage}%`}
+  />
+</Card>
+```
+
+### Performance Considerations
+- Use `preview` prop on Image components for better UX
+- Implement proper loading states with Skeleton components
+- Use controlled components with React state management
+- Avoid unnecessary re-renders with proper key props

@@ -1,0 +1,163 @@
+---
+globs: "**/*.ts,**/*.tsx"
+description: "TypeScript Patterns and Type Safety Guidelines"
+---
+
+# TypeScript Patterns for Product Catalog
+
+## Type Definitions
+Based on the project structure, define types consistently:
+
+### Product Types
+```typescript
+interface Product {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  discountPercentage: number;
+  rating: number;
+  stock: number;
+  brand: string;
+  category: string;
+  thumbnail: string;
+  images: string[];
+}
+```
+
+### Component Props
+```typescript
+interface ProductCardProps {
+  product: Product;
+  onSelect?: (product: Product) => void;
+}
+
+interface SortOption {
+  label: string;
+  value: string;
+}
+
+interface CategoryOption {
+  label: string;
+  value: string;
+}
+```
+
+### API Response Types
+```typescript
+interface DummyJsonResponse {
+  products: Product[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+interface ApiError {
+  error: string;
+  status?: number;
+}
+```
+
+## Type Safety Rules
+
+### Strict Type Checking
+- **No `any` types** - Use `unknown` and type guards instead
+- **Explicit return types** for functions that return complex objects
+- **Proper error typing** with custom error interfaces
+- **Generic constraints** for reusable components
+
+### Component Props
+```typescript
+// ✅ Good - Explicit props interface
+interface ProductCardProps {
+  product: Product;
+  className?: string;
+  onSelect?: (product: Product) => void;
+}
+
+// ✅ Good - Proper event typing
+const handleSelect = (product: Product) => {
+  onSelect?.(product);
+};
+
+// ❌ Avoid - Using any for events
+const handleClick = (event: any) => {
+  // ...
+};
+```
+
+### State Management
+```typescript
+// ✅ Good - Typed state with proper initial values
+const [products, setProducts] = useState<Product[]>([]);
+const [loading, setLoading] = useState<boolean>(true);
+const [error, setError] = useState<string | null>(null);
+
+// ✅ Good - Typed event handlers
+const handleCategoryChange = (e: { value: string }) => {
+  setSelectedCategory(e.value);
+};
+```
+
+### API Integration
+```typescript
+// ✅ Good - Typed fetch with error handling
+const fetchProducts = async (): Promise<Product[]> => {
+  try {
+    const response = await fetch('/api/products');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    throw new Error('Failed to fetch products');
+  }
+};
+```
+
+### Utility Functions
+```typescript
+// ✅ Good - Pure functions with proper typing
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  }).format(price);
+};
+
+// ✅ Good - Type guards for runtime type checking
+const isValidProduct = (obj: unknown): obj is Product => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'title' in obj &&
+    'price' in obj
+  );
+};
+```
+
+### Error Handling
+```typescript
+// ✅ Good - Typed error handling
+const handleError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Error desconocido';
+};
+```
+
+## Import Organization
+```typescript
+// External libraries
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card } from 'primereact/card';
+
+// Internal types (if in separate files)
+import type { Product, SortOption } from '@/types/product';
+
+// Relative imports
+import { formatPrice } from './utils';
+```
