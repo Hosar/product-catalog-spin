@@ -5,8 +5,6 @@ import { Column } from 'primereact/column';
 import { Paginator } from 'primereact/paginator';
 import { ProductFilters } from './components/ProductFilters';
 import { ProductSearch } from './components/ProductSearch';
-import { ProductsSkeleton } from './components/ProductsSkeleton';
-import { MainErrorMessage } from './components/MainErrorMessage';
 import { Chart } from 'primereact/chart';
 import {
   ProductImageTemplate,
@@ -16,8 +14,8 @@ import {
   ProductRatingTemplate,
   ProductStockTemplate,
 } from './components/templates';
-import { capitalize } from '@/utils/formatters';
-import type { Product } from '@/types/product';
+import { capitalize, countReviewRatings } from '@/utils/formatters';
+import type { Product, Review } from '@/types/product';
 import type { DataTableStateEvent, DataTableSelectEvent } from 'primereact/datatable';
 import { Category } from '@/types/category';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
@@ -33,29 +31,40 @@ interface ProductsPresenterProps {
   className?: string;
 }
 
-const chartBodyTemplate = (rowData: any) => {
-  const chartData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May"],
+const chartBodyTemplate = (rowData: Product) => {
+  const reviews = countReviewRatings(rowData.reviews as Review[]);
+  const data = {
+    labels: ['1', '2', '3', '4', '5'],
     datasets: [
       {
-        label: rowData.name,
-        data: rowData.rating,
-        fill: false,
-        borderColor: "#42A5F5",
-      },
-    ],
-  };
-
-  const chartOptions = {
-    plugins: { legend: { display: false } }, // hide legend for compactness
-    responsive: true,
-    maintainAspectRatio: false,
+        data: reviews || [],
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          "#0033cc"
+        ],
+        hoverBackgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          "#0033cc"
+        ]
+      }
+    ]
+  }
+  const options = {
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
   };
 
   return (
-    <div style={{ width: "150px", height: "80px" }}>
-      <Chart type="line" data={chartData} options={chartOptions} />
-    </div>
+    <Chart type="bar" data={data} options={options} />
   );
 };
 
@@ -105,7 +114,7 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
   // Function to update URL parameters
   const updateUrlParams = useCallback((newParams: Record<string, string | number | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     Object.entries(newParams).forEach(([key, value]) => {
       if (value === null || value === '' || value === 0) {
         params.delete(key);
@@ -182,111 +191,111 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
     <main className={`grid ${className}`}>
       <div className="col-12">
         <section className="flex flex-column gap-4 px-4 py-6">
-        {/* Header */}
-        <header className="flex flex-column gap-3">
-          <h1 
-            className="text-3xl font-bold m-0" 
-            aria-label="Página de productos"
-          >
-            Catálogo de Productos
-          </h1>
-          
-          {/* Search */}
-          <ProductSearch />
-          
-          {/* Filters and Sort */}
-          <ProductFilters
-            selectedCategory={selectedCategory}
-            categoryOptions={categoryOptions}
-            onCategoryChange={handleCategoryChangeWithReset}
-          />
-        </header>
+          {/* Header */}
+          <header className="flex flex-column gap-3">
+            <h1
+              className="text-3xl font-bold m-0"
+              aria-label="Página de productos"
+            >
+              Catálogo de Productos
+            </h1>
 
-        {/* Results count */}
-        <section className="flex align-items-center justify-content-between" aria-label="Información de resultados">
-          <p 
-            className="text-600 m-0" 
-            aria-label={`Mostrando ${products.length} de ${total} productos`}
-          >
-            Mostrando {products.length} de {total} productos
-          </p>
-        </section>
+            {/* Search */}
+            <ProductSearch />
 
-        {/* Products DataTable */}
-        <section className="border-round surface-card" aria-label="Tabla de productos">
-          <DataTable
-            value={products}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSort={onSort}
-            onRowSelect={handleProductSelect}
-            selectionMode="single"
-            dataKey="id"
-            emptyMessage="No se encontraron productos"
-            className="p-datatable-sm"
-            paginator={false}
-            aria-label="Tabla de productos"
-          >
-            <Column
-              field="thumbnail"
-              header="Imagen"
-              body={imageBodyTemplate}
-              style={{ width: '80px' }}
-              sortable={false}
+            {/* Filters and Sort */}
+            <ProductFilters
+              selectedCategory={selectedCategory}
+              categoryOptions={categoryOptions}
+              onCategoryChange={handleCategoryChangeWithReset}
             />
-            <Column
-              field="title"
-              header="Producto"
-              body={titleBodyTemplate}
-              sortable
-              style={{ minWidth: '150px' }}
-            />
-            <Column
-              field="price"
-              header="Precio"
-              body={priceBodyTemplate}
-              sortable
-              style={{ width: '120px' }}
-            />
-            <Column
-              field="category"
-              header="Categoría"
-              body={categoryBodyTemplate}
-              sortable
-              style={{ width: '120px' }}
-            />
-            <Column
-              field="rating"
-              header="Calificación"
-              body={ratingBodyTemplate}
-              sortable
-              style={{ width: '120px' }}
-            />
-            <Column
-              field="stock"
-              header="Stock"
-              body={stockBodyTemplate}
-              sortable
-              style={{ width: '100px' }}
-            />
-            <Column
-              header="Sales Trend" body={chartBodyTemplate}
-              style={{ width: '150px' }}
-            />
-          </DataTable>
+          </header>
 
-          {/* Pagination */}
-          <nav className="flex justify-content-center p-3" aria-label="Navegación de páginas">
-            <Paginator
-              first={skip}
-              rows={limit}
-              totalRecords={total}
-              onPageChange={onPageChange}
-              template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
-              aria-label="Navegación de páginas de productos"
-            />
-          </nav>
-        </section>
+          {/* Results count */}
+          <section className="flex align-items-center justify-content-between" aria-label="Información de resultados">
+            <p
+              className="text-600 m-0"
+              aria-label={`Mostrando ${products.length} de ${total} productos`}
+            >
+              Mostrando {products.length} de {total} productos
+            </p>
+          </section>
+
+          {/* Products DataTable */}
+          <section className="border-round surface-card" aria-label="Tabla de productos">
+            <DataTable
+              value={products}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSort={onSort}
+              onRowSelect={handleProductSelect}
+              selectionMode="single"
+              dataKey="id"
+              emptyMessage="No se encontraron productos"
+              className="p-datatable-sm"
+              paginator={false}
+              aria-label="Tabla de productos"
+            >
+              <Column
+                field="thumbnail"
+                header="Imagen"
+                body={imageBodyTemplate}
+                style={{ width: '80px' }}
+                sortable={false}
+              />
+              <Column
+                field="title"
+                header="Producto"
+                body={titleBodyTemplate}
+                sortable
+                style={{ minWidth: '150px' }}
+              />
+              <Column
+                field="price"
+                header="Precio"
+                body={priceBodyTemplate}
+                sortable
+                style={{ width: '120px' }}
+              />
+              <Column
+                field="category"
+                header="Categoría"
+                body={categoryBodyTemplate}
+                sortable
+                style={{ width: '120px' }}
+              />
+              <Column
+                field="rating"
+                header="Calificación"
+                body={ratingBodyTemplate}
+                sortable
+                style={{ width: '120px' }}
+              />
+              <Column
+                field="stock"
+                header="Stock"
+                body={stockBodyTemplate}
+                sortable
+                style={{ width: '100px' }}
+              />
+              <Column
+                header="Reviews" body={chartBodyTemplate}
+                style={{ width: '150px' }}
+              />
+            </DataTable>
+
+            {/* Pagination */}
+            <nav className="flex justify-content-center p-3" aria-label="Navegación de páginas">
+              <Paginator
+                first={skip}
+                rows={limit}
+                totalRecords={total}
+                onPageChange={onPageChange}
+                template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+                aria-label="Navegación de páginas de productos"
+              />
+            </nav>
+          </section>
         </section>
       </div>
     </main>
