@@ -52,7 +52,6 @@ export async function ProductsServerContainer({
         initialTotal={0}
         initialSkip={0}
         initialLimit={0}
-        initialError={categoriesResult.error || 'Failed to fetch categories'}
         className={className}
       />
     );
@@ -113,7 +112,6 @@ export async function ProductsServerContainer({
   // Extract data or provide defaults
   const initialProducts: Product[] = success ? (products || []) : [];
   const initialCategories: Category[] = success ? (categories || []) : [];
-  const initialError: string | null = success ? null : (error || null);
 
   return (
     <ProductsContainer
@@ -122,7 +120,6 @@ export async function ProductsServerContainer({
       initialTotal={total}
       initialSkip={resultSkip}
       initialLimit={resultLimit}
-      initialError={initialError}
       className={className}
     />
   );

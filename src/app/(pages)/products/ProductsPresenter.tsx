@@ -85,14 +85,12 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   // Create category options for dropdown
   const categoryOptions = [
-    { label: 'Todas las categorías', value: null },
+    { label: 'Todas las categorías', value: '' },
     ...categories.map((category: Category) => ({
       label: capitalize(category.name),
       value: category.name
     }))
   ];
-
-  console.log('----> categoryOptions ....:', categoryOptions);
   // Handle pagination
   const onPageChange = useCallback((event: { first: number; rows: number; page: number }) => {
     updateUrlParams({
@@ -103,10 +101,9 @@ export const ProductsPresenter: React.FC<ProductsPresenterProps> = ({
 
   // Handle filter changes with pagination reset
   const handleCategoryChangeWithReset = useCallback((e: { value: string }) => {
-    console.log('handleCategoryChangeWithReset - e.value ....:', e.value);
     let value = e.value;
-    if(typeof e.value === 'object' && e.value !== null) {
-      value = e.value?.value || null;
+    if(typeof e.value === 'object' && e.value !== null && 'value' in e.value) {
+      value = e.value['value'] || null;
     }
     updateUrlParams({
       category: value,

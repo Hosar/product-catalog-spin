@@ -14,7 +14,6 @@ interface ProductsContainerProps {
   initialSkip?: number;
   initialLimit?: number;
   initialCategories?: Category[];
-  initialError?: string | null;
   className?: string;
 }
 
@@ -28,7 +27,6 @@ export const ProductsContainer: React.FC<ProductsContainerProps> = ({
   initialSkip = 0,
   initialLimit = 0,
   initialCategories = [],
-  initialError = null,
   className = '' 
 }) => {
   return (
@@ -38,7 +36,6 @@ export const ProductsContainer: React.FC<ProductsContainerProps> = ({
       total={initialTotal}
       skip={initialSkip}
       limit={initialLimit}
-      error={initialError}
       className={className}
     />
   );

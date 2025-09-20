@@ -98,9 +98,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {formatPrice(product.price)}
             </span>
             <Tag
-              value={product.brand}
+              value={product.minimumOrderQuantity}
               severity="info"
-              aria-label={`Marca: ${product.brand}`}
+              aria-label={`Minimo: ${product.minimumOrderQuantity}`}
             />
           </div>
 
