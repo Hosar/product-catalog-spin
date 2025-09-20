@@ -59,7 +59,7 @@ export const countReviewRatings = (reviews: Review[]): number[] => {
 
   for (const review of reviews) {
     const rating = review.rating;
-    if (rating >= 0 && rating < 5 && counts[rating]) {
+    if (rating >= 0 && rating < 5 && counts[rating] !== undefined) {
       counts[rating]++;
     }
   }
