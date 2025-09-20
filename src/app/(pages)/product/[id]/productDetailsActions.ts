@@ -1,13 +1,14 @@
 'use server';
 import pino from 'pino';
 import type { Product } from '@/types/product';
+import { getBaseUrl } from '@/utils/url';
 
 // Initialize structured logger
 const logger = pino({
   level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
 });
 
-const baseUrl = process.env.DOMAIN || "http://localhost:3000";
+const baseUrl = getBaseUrl();
 
 /**
  * Fetches a single product by ID from the external API

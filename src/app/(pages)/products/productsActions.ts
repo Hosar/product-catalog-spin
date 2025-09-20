@@ -3,17 +3,12 @@ import { revalidatePath } from 'next/cache';
 import pino from 'pino';
 import type { Product } from '@/types/product';
 import { Category } from '@/types/category';
+import { getBaseUrl } from '@/utils/url';
 
 // Initialize structured logger
 const logger = pino({
   level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
 });
-
-function getBaseUrl() {
-  const vercel = 'product-catalog-spin.vercel.app'; // e.g. my-app-abc123.vercel.app
-  if (vercel) return `https://${vercel}`;
-  return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-}
 
 const baseUrl = getBaseUrl();
 
